@@ -68,9 +68,10 @@ This application is configured for deployment on [Render](https://render.com).
 - No external database required
 - Console available at `/h2-console`
 
-### Production (PostgreSQL)
-- Configure connection details in `application-prod.properties`
-- Set environment variables for database credentials
+### Production (Aiven MySQL)
+- Uses Aiven MySQL database service
+- Connection details configured via environment variables
+- SSL enabled for secure connections
 
 ## Technologies Used
 
