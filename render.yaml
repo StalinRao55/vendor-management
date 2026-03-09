@@ -1,8 +1,3 @@
-databases:
-  - name: vendor-management-db
-    plan: free
-    region: oregon
-
 services:
   - type: web
     name: vendor-management
@@ -34,3 +29,8 @@ services:
         fromDatabase:
           name: vendor-management-db
           property: password
+
+databases:
+  - name: vendor-management-db
+    plan: free
+    region: oregon
