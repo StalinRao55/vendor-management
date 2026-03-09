@@ -1,23 +1,14 @@
-FROM eclipse-temurin:17-jdk-jammy
+FROM maven:3.9.9-eclipse-temurin-17 AS build
 
-# Set working directory
+WORKDIR /app
+COPY . .
+RUN mvn clean package -DskipTests
+
+FROM eclipse-temurin:17-jdk-jammy
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml
-COPY .mvn/ .mvn
-COPY mvnw pom.xml ./
+COPY --from=build /app/target/*.jar app.jar
 
-# Download dependencies
-RUN ./mvnw dependency:resolve
+EXPOSE 10000
 
-# Copy source code
-COPY src ./src
-
-# Build the application
-RUN ./mvnw clean package -DskipTests
-
-# Expose the port
-EXPOSE 8080
-
-# Start the application with environment variables
-CMD ["java", "-jar", "target/vendor-management-1.0.jar"]
+ENTRYPOINT ["java","-jar","app.jar"]
