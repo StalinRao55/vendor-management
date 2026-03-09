@@ -1,3 +1,8 @@
+databases:
+  - name: vendor-management-db
+    plan: free
+    region: oregon
+
 services:
   - type: web
     name: vendor-management
@@ -10,12 +15,22 @@ services:
       - key: SERVER_PORT
         value: "10000"
       - key: DB_HOST
-        value: "mysql-2f80a19d-sstalinrao5555-4fec.a.aivencloud.com"
+        fromDatabase:
+          name: vendor-management-db
+          property: connectionString
       - key: DB_PORT
-        value: "19869"
+        fromDatabase:
+          name: vendor-management-db
+          property: port
       - key: DB_NAME
-        value: "defaultdb"
+        fromDatabase:
+          name: vendor-management-db
+          property: database
       - key: DB_USERNAME
-        value: "avnadmin"
+        fromDatabase:
+          name: vendor-management-db
+          property: username
       - key: DB_PASSWORD
-        value: "AVNS_mBAwikkMZrwcSPF3qWP"
+        fromDatabase:
+          name: vendor-management-db
+          property: password
