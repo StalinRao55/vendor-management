@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Approvals | VMS Premium</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/modern-dashboard.css">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <style>
+        .status-badge {
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-pending { background: #fef9c3; color: #854d0e; }
+        .status-approved { background: #dcfce7; color: #166534; }
+        .status-rejected { background: #fee2e2; color: #991b1b; }
+        
+        .vendor-card-premium {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 24px;
+            transition: var(--transition);
+        }
+        .vendor-card-premium:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--card-shadow);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="brand">
+            <i class="fas fa-shield-halved"></i>
+            <span>VMS ADMIN</span>
+        </div>
+        <nav class="nav-menu">
+            <div class="nav-item">
+                <a class="nav-link" href="/admin-dashboard">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+            </div>
+            <div class="nav-item">
+                <a class="nav-link active" href="/admin-vendor-approval">
+                    <i class="fas fa-user-check"></i> Vendor Approvals
+                </a>
+            </div>
+            
+            <div style="margin: 20px 0; border-top: 1px solid #f1f5f9;"></div>
+
+            <div class="nav-item">
+                <a class="nav-link" href="javascript:void(0)" id="themeToggle">
+                    <i class="fas fa-moon"></i> Theme
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a class="nav-link text-danger" href="/logout">
+                    <i class="fas fa-power-off"></i> Logout
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <header class="d-flex justify-content-between align-items-center mb-5 animate-fade-in">
+            <div>
+                <h1 class="fw-bold mb-1">Vendor Onboarding</h1>
+                <p class="text-secondary">Approve or reject new vendor registrations after document verification.</p>
+            </div>
+        </header>
+
+    <div class="container mt-4">
+            <!-- Stats Overview -->
+        <div class="stats-grid animate-fade-in">
+            <div class="stat-card" style="background: var(--primary-gradient);">
+                <i class="fas fa-users"></i>
+                <h3 id="totalVendors">0</h3>
+                <p>Total Registrations</p>
+            </div>
+            <div class="stat-card" style="background: #f59e0b;">
+                <i class="fas fa-clock"></i>
+                <h3 id="pendingVendors">0</h3>
+                <p>Pending Approval</p>
+            </div>
+            <div class="stat-card" style="background: #10b981;">
+                <i class="fas fa-circle-check"></i>
+                <h3 id="approvedVendors">0</h3>
+                <p>Approved</p>
+            </div>
+            <div class="stat-card" style="background: #ef4444;">
+                <i class="fas fa-circle-xmark"></i>
+                <h3 id="rejectedVendors">0</h3>
+                <p>Rejected</p>
+            </div>
+        </div>
+
+        <div class="glass-card animate-fade-in">
+            <ul class="nav nav-pills mb-4" id="vendorTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pending-tab" data-bs-toggle="pill" data-bs-target="#pending" type="button">
+                        <i class="fas fa-clock me-2"></i>Pending Approval
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="approved-tab" data-bs-toggle="pill" data-bs-target="#approved" type="button">
+                        <i class="fas fa-check-circle me-2"></i>Approved
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="rejected-tab" data-bs-toggle="pill" data-bs-target="#rejected" type="button">
+                        <i class="fas fa-times-circle me-2"></i>Rejected
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="vendorTabContent">
+                <!-- Pending Vendors -->
+                <div class="tab-pane fade show active" id="pending" role="tabpanel">
+                    <div class="row" id="pendingVendorsList">
+                        <!-- Pending vendors will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Approved Vendors -->
+                <div class="tab-pane fade" id="approved" role="tabpanel">
+                    <div class="row" id="approvedVendorsList">
+                        <!-- Approved vendors will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Rejected Vendors -->
+                <div class="tab-pane fade" id="rejected" role="tabpanel">
+                    <div class="row" id="rejectedVendorsList">
+                        <!-- Rejected vendors will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor Details Modal -->
+    <div class="modal fade" id="vendorDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user me-2"></i>
+                        <span id="modalVendorName">Vendor Details</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Basic Information</h6>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><strong>Company Name:</strong> <span id="modalCompanyName"></span></li>
+                                <li class="list-group-item"><strong>Contact Person:</strong> <span id="modalContactPerson"></span></li>
+                                <li class="list-group-item"><strong>Email:</strong> <span id="modalEmail"></span></li>
+                                <li class="list-group-item"><strong>Phone:</strong> <span id="modalPhone"></span></li>
+                                <li class="list-group-item"><strong>Service Type:</strong> <span id="modalServiceType"></span></li>
+                                <li class="list-group-item"><strong>Category:</strong> <span id="modalCategory"></span></li>
+                                <li class="list-group-item"><strong>Registration Date:</strong> <span id="modalRegistrationDate"></span></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Business Details</h6>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><strong>GST Number:</strong> <span id="modalGstNumber"></span></li>
+                                <li class="list-group-item"><strong>PAN Number:</strong> <span id="modalPanNumber"></span></li>
+                                <li class="list-group-item"><strong>Website:</strong> <span id="modalWebsite"></span></li>
+                                <li class="list-group-item"><strong>Designation:</strong> <span id="modalDesignation"></span></li>
+                                <li class="list-group-item"><strong>Bank Account:</strong> <span id="modalBankAccount"></span></li>
+                                <li class="list-group-item"><strong>Bank Name:</strong> <span id="modalBankName"></span></li>
+                                <li class="list-group-item"><strong>IFSC Code:</strong> <span id="modalIfscCode"></span></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <h6>Address</h6>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><strong>Address:</strong> <span id="modalAddress"></span></li>
+                                <li class="list-group-item"><strong>City:</strong> <span id="modalCity"></span></li>
+                                <li class="list-group-item"><strong>State:</strong> <span id="modalState"></span></li>
+                                <li class="list-group-item"><strong>Country:</strong> <span id="modalCountry"></span></li>
+                                <li class="list-group-item"><strong>Pincode:</strong> <span id="modalPincode"></span></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <h6>Documents</h6>
+                            <ul class="document-list" id="modalDocuments">
+                                <!-- Documents will be listed here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rejection Reason Modal -->
+    <div class="modal fade" id="rejectionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Reject Vendor Application
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="rejectionForm">
+                        <input type="hidden" id="rejectionVendorId">
+                        <div class="mb-3">
+                            <label for="rejectionReason" class="form-label">Rejection Reason</label>
+                            <textarea class="form-control" id="rejectionReason" rows="4" placeholder="Please provide a reason for rejection..." required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="submitRejection()">Reject Vendor</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentTab = 'pending';
+        
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadVendors('pending');
+            
+            // Add event listeners for tab changes
+            document.querySelectorAll('.nav-link').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    currentTab = this.getAttribute('data-bs-target').replace('#', '');
+                    loadVendors(currentTab);
+                });
+            });
+        });
+
+        async function loadStats() {
+            try {
+                const [pendingRes, approvedRes, rejectedRes] = await Promise.all([
+                    fetch('/api/vendor-registration/pending'),
+                    fetch('/api/vendor-registration/approved'),
+                    fetch('/api/vendor-registration/rejected')
+                ]);
+                
+                const pending = await pendingRes.json();
+                const approved = await approvedRes.json();
+                const rejected = await rejectedRes.json();
+                
+                document.getElementById('totalVendors').textContent = pending.length + approved.length + rejected.length;
+                document.getElementById('pendingVendors').textContent = pending.length;
+                document.getElementById('approvedVendors').textContent = approved.length;
+                document.getElementById('rejectedVendors').textContent = rejected.length;
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadVendors(status) {
+            const container = document.getElementById(status + 'VendorsList');
+            container.innerHTML = '<div class="col-12 text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+            
+            try {
+                let vendors = [];
+                if (status === 'pending') {
+                    const response = await fetch('/api/vendor-registration/pending');
+                    vendors = await response.json();
+                } else if (status === 'approved') {
+                    const response = await fetch('/api/vendor-registration/approved');
+                    vendors = await response.json();
+                } else if (status === 'rejected') {
+                    const response = await fetch('/api/vendor-registration/rejected');
+                    vendors = await response.json();
+                }
+                
+                container.innerHTML = '';
+                
+                if (vendors.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12 text-center">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                No ${status} vendors found.
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                vendors.forEach(vendor => {
+                    const vendorCard = createVendorCard(vendor, status);
+                    container.appendChild(vendorCard);
+                });
+                
+            } catch (error) {
+                console.error('Error loading vendors:', error);
+                container.innerHTML = `
+                    <div class="col-12 text-center">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error loading vendors. Please try again.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function createVendorCard(vendor, status) {
+            const card = document.createElement('div');
+            card.className = 'col-md-6 col-lg-4';
+            
+            const statusClass = status === 'pending' ? 'status-pending' : 
+                               status === 'approved' ? 'status-approved' : 'status-rejected';
+            const statusText = status === 'pending' ? 'Pending Approval' : 
+                              status === 'approved' ? 'Approved' : 'Rejected';
+            
+            card.innerHTML = `
+                <div class="vendor-card-premium h-100 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-1">${vendor.name}</h5>
+                            <p class="text-secondary small mb-3">${vendor.companyName}</p>
+                            <span class="status-badge ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4 flex-grow-1">
+                        <div class="d-flex align-items-center mb-2 text-secondary small">
+                            <i class="fas fa-envelope me-2"></i> ${vendor.email}
+                        </div>
+                        <div class="d-flex align-items-center mb-2 text-secondary small">
+                            <i class="fas fa-phone me-2"></i> ${vendor.phone}
+                        </div>
+                        <div class="d-flex align-items-center text-secondary small">
+                            <i class="fas fa-tag me-2"></i> ${vendor.category}
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex flex-wrap gap-2 mt-auto">
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="viewVendorDetails(${vendor.id})">
+                            Details
+                        </button>
+                        
+                        ${status === 'pending' ? `
+                            <button class="btn btn-sm btn-success rounded-pill px-3" onclick="approveVendor(${vendor.id})">
+                                Approve
+                            </button>
+                            <button class="btn btn-sm btn-danger rounded-pill px-3" onclick="showRejectionModal(${vendor.id})">
+                                Reject
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        async function viewVendorDetails(vendorId) {
+            try {
+                const response = await fetch(`/api/vendors/${vendorId}`);
+                const vendor = await response.json();
+                
+                // Populate modal
+                document.getElementById('modalVendorName').textContent = vendor.name;
+                document.getElementById('modalCompanyName').textContent = vendor.companyName;
+                document.getElementById('modalContactPerson').textContent = vendor.contactPerson;
+                document.getElementById('modalEmail').textContent = vendor.email;
+                document.getElementById('modalPhone').textContent = vendor.phone;
+                document.getElementById('modalServiceType').textContent = vendor.serviceType;
+                document.getElementById('modalCategory').textContent = vendor.category;
+                document.getElementById('modalRegistrationDate').textContent = vendor.registrationDate;
+                document.getElementById('modalGstNumber').textContent = vendor.gstNumber;
+                document.getElementById('modalPanNumber').textContent = vendor.panNumber;
+                document.getElementById('modalWebsite').textContent = vendor.website || 'Not provided';
+                document.getElementById('modalDesignation').textContent = vendor.contactDesignation;
+                document.getElementById('modalBankAccount').textContent = vendor.bankAccountNumber || 'Not provided';
+                document.getElementById('modalBankName').textContent = vendor.bankName || 'Not provided';
+                document.getElementById('modalIfscCode').textContent = vendor.ifscCode || 'Not provided';
+                document.getElementById('modalAddress').textContent = vendor.address;
+                document.getElementById('modalCity').textContent = vendor.city;
+                document.getElementById('modalState').textContent = vendor.state;
+                document.getElementById('modalCountry').textContent = vendor.country;
+                document.getElementById('modalPincode').textContent = vendor.pincode;
+                
+                // Documents list
+                const documentsList = document.getElementById('modalDocuments');
+                documentsList.innerHTML = `
+                    <li><i class="fas fa-file-pdf text-danger me-2"></i>GST Certificate</li>
+                    <li><i class="fas fa-id-card text-primary me-2"></i>PAN Card</li>
+                    <li><i class="fas fa-certificate text-success me-2"></i>Business License</li>
+                    <li><i class="fas fa-file-alt text-info me-2"></i>Company Registration</li>
+                `;
+                
+                new bootstrap.Modal(document.getElementById('vendorDetailsModal')).show();
+                
+            } catch (error) {
+                console.error('Error loading vendor details:', error);
+                alert('Error loading vendor details. Please try again.');
+            }
+        }
+
+        async function approveVendor(vendorId) {
+            if (!confirm('Are you sure you want to approve this vendor?')) {
+                return;
+            }
+            
+            try {
+                // Hardcoding user ID 1 for now
+                const response = await fetch(`/api/vendor-registration/${vendorId}/approve?approvedByUserId=1`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Vendor approved successfully!');
+                    loadVendors(currentTab);
+                    loadStats();
+                } else {
+                    alert('Error approving vendor: ' + result.message);
+                }
+                
+            } catch (error) {
+                console.error('Error approving vendor:', error);
+                alert('Error approving vendor. Please try again.');
+            }
+        }
+
+        function showRejectionModal(vendorId) {
+            document.getElementById('rejectionVendorId').value = vendorId;
+            document.getElementById('rejectionReason').value = '';
+            new bootstrap.Modal(document.getElementById('rejectionModal')).show();
+        }
+
+        async function submitRejection() {
+            const vendorId = document.getElementById('rejectionVendorId').value;
+            const reason = document.getElementById('rejectionReason').value;
+            
+            if (!reason.trim()) {
+                alert('Please provide a reason for rejection.');
+                return;
+            }
+            
+            try {
+                // Pass reason as query param since controller uses @RequestParam
+                const response = await fetch(`/api/vendor-registration/${vendorId}/reject?rejectionReason=${encodeURIComponent(reason)}&rejectedByUserId=1`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Vendor rejected successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('rejectionModal')).hide();
+                    loadVendors(currentTab);
+                    loadStats();
+                } else {
+                    alert('Error rejecting vendor: ' + result.message);
+                }
+                
+            } catch (error) {
+                console.error('Error rejecting vendor:', error);
+                alert('Error rejecting vendor. Please try again.');
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>

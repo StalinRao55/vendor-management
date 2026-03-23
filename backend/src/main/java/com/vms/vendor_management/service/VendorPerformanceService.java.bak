@@ -1,0 +1,237 @@
+package com.vms.vendor_management.service;
+
+import com.vms.vendor_management.exception.ResourceNotFoundException;
+import com.vms.vendor_management.model.PerformanceRecord;
+import com.vms.vendor_management.model.PurchaseOrder;
+import com.vms.vendor_management.model.Vendor;
+import com.vms.vendor_management.model.enums.OrderStatus;
+import com.vms.vendor_management.repository.PerformanceRecordRepository;
+import com.vms.vendor_management.repository.PurchaseOrderRepository;
+import com.vms.vendor_management.repository.VendorRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@Service
+@Transactional
+public class VendorPerformanceService {
+
+    @Autowired
+    private PerformanceRecordRepository performanceRecordRepository;
+
+    @Autowired
+    private VendorRepository vendorRepository;
+
+    @Autowired
+    private PurchaseOrderRepository purchaseOrderRepository;
+
+    public PerformanceRecord createPerformanceRecord(Long vendorId, Integer qualityScore, 
+                                                    Integer deliveryScore, Integer serviceScore,
+                                                    String comments, Long evaluatedById) {
+        Vendor vendor = vendorRepository.findById(vendorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor not found with id: " + vendorId));
+
+        PerformanceRecord performanceRecord = new PerformanceRecord();
+        performanceRecord.setVendor(vendor);
+        performanceRecord.setQualityScore(qualityScore);
+        performanceRecord.setDeliveryScore(deliveryScore);
+        performanceRecord.setServiceScore(serviceScore);
+        performanceRecord.setComments(comments);
+        performanceRecord.setEvaluationDate(LocalDate.now());
+        performanceRecord.setCreatedAt(LocalDateTime.now());
+
+        // Calculate overall score
+        Double overallScore = (qualityScore + deliveryScore + serviceScore) / 3.0;
+        performanceRecord.setOverallScore(overallScore);
+
+        // Update vendor's overall rating
+        updateVendorRating(vendor);
+
+        return performanceRecordRepository.save(performanceRecord);
+    }
+
+    public PerformanceRecord updatePerformanceRecord(Long id, Integer qualityScore, 
+                                                    Integer deliveryScore, Integer serviceScore,
+                                                    String comments) {
+        PerformanceRecord performanceRecord = performanceRecordRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Performance record not found with id: " + id));
+
+        performanceRecord.setQualityScore(qualityScore);
+        performanceRecord.setDeliveryScore(deliveryScore);
+        performanceRecord.setServiceScore(serviceScore);
+        performanceRecord.setComments(comments);
+        performanceRecord.setEvaluationDate(LocalDate.now());
+        performanceRecord.setUpdatedAt(LocalDateTime.now());
+
+        // Calculate overall score
+        Double overallScore = (qualityScore + deliveryScore + serviceScore) / 3.0;
+        performanceRecord.setOverallScore(overallScore);
+
+        // Update vendor's overall rating
+        updateVendorRating(performanceRecord.getVendor());
+
+        return performanceRecordRepository.save(performanceRecord);
+    }
+
+    public PerformanceRecord getPerformanceRecordById(Long id) {
+        return performanceRecordRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Performance record not found with id: " + id));
+    }
+
+    public List<PerformanceRecord> getPerformanceRecordsByVendor(Long vendorId) {
+        Vendor vendor = vendorRepository.findById(vendorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor not found with id: " + vendorId));
+        return performanceRecordRepository.findByVendorOrderByEvaluationDateDesc(vendor);
+    }
+
+    public List<PerformanceRecord> getRecentPerformanceRecords(int limit) {
+        return performanceRecordRepository.findTopByOrderByEvaluationDateDesc(limit);
+    }
+
+    public Map<String, Object> getVendorPerformanceSummary(Long vendorId) {
+        Vendor vendor = vendorRepository.findById(vendorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor not found with id: " + vendorId));
+
+        List<PerformanceRecord> records = performanceRecordRepository.findByVendorOrderByEvaluationDateDesc(vendor);
+        
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("vendorId", vendor.getId());
+        summary.put("vendorName", vendor.getName());
+        summary.put("currentRating", vendor.getRating());
+        summary.put("totalReviews", vendor.getTotalReviews());
+        
+        if (!records.isEmpty()) {
+            PerformanceRecord latestRecord = records.get(0);
+            summary.put("latestEvaluation", latestRecord.getEvaluationDate());
+            summary.put("latestQualityScore", latestRecord.getQualityScore());
+            summary.put("latestDeliveryScore", latestRecord.getDeliveryScore());
+            summary.put("latestServiceScore", latestRecord.getServiceScore());
+            summary.put("latestOverallScore", latestRecord.getOverallScore());
+        }
+
+        // Calculate delivery performance
+        List<PurchaseOrder> orders = purchaseOrderRepository.findByVendorId(vendorId);
+        summary.put("totalOrders", orders.size());
+        
+        long deliveredOnTime = orders.stream()
+                .filter(order -> order.getStatus() == OrderStatus.DELIVERED 
+                    && order.getActualDeliveryDate() != null 
+                    && !order.getActualDeliveryDate().isAfter(order.getExpectedDeliveryDate()))
+                .count();
+        
+        double deliveryPerformance = orders.isEmpty() ? 0.0 : 
+            (double) deliveredOnTime / orders.size() * 100;
+        
+        summary.put("deliveryPerformance", Math.round(deliveryPerformance * 100.0) / 100.0);
+        summary.put("onTimeDeliveries", deliveredOnTime);
+
+        return summary;
+    }
+
+    public List<Map<String, Object>> getTopPerformingVendors(int limit) {
+        return performanceRecordRepository.findTopPerformingVendors(limit);
+    }
+
+    public List<Map<String, Object>> getLowPerformingVendors(int limit) {
+        return performanceRecordRepository.findLowPerformingVendors(limit);
+    }
+
+    public Map<String, Object> getPerformanceAnalytics() {
+        Map<String, Object> analytics = new HashMap<>();
+        
+        // Overall statistics
+        long totalVendors = vendorRepository.count();
+        long vendorsWithReviews = performanceRecordRepository.countDistinctVendors();
+        
+        analytics.put("totalVendors", totalVendors);
+        analytics.put("vendorsWithReviews", vendorsWithReviews);
+        analytics.put("reviewCoverage", totalVendors > 0 ? 
+            Math.round((double) vendorsWithReviews / totalVendors * 100 * 100.0) / 100.0 : 0.0);
+
+        // Average scores
+        Double avgQuality = performanceRecordRepository.findAverageQualityScore();
+        Double avgDelivery = performanceRecordRepository.findAverageDeliveryScore();
+        Double avgService = performanceRecordRepository.findAverageServiceScore();
+        Double avgOverall = performanceRecordRepository.findAverageOverallScore();
+
+        analytics.put("averageQualityScore", avgQuality != null ? Math.round(avgQuality * 100.0) / 100.0 : 0.0);
+        analytics.put("averageDeliveryScore", avgDelivery != null ? Math.round(avgDelivery * 100.0) / 100.0 : 0.0);
+        analytics.put("averageServiceScore", avgService != null ? Math.round(avgService * 100.0) / 100.0 : 0.0);
+        analytics.put("averageOverallScore", avgOverall != null ? Math.round(avgOverall * 100.0) / 100.0 : 0.0);
+
+        // Performance distribution
+        analytics.put("excellentVendors", performanceRecordRepository.countVendorsByScoreRange(4.5, 5.0));
+        analytics.put("goodVendors", performanceRecordRepository.countVendorsByScoreRange(3.5, 4.4));
+        analytics.put("averageVendors", performanceRecordRepository.countVendorsByScoreRange(2.5, 3.4));
+        analytics.put("poorVendors", performanceRecordRepository.countVendorsByScoreRange(0.0, 2.4));
+
+        return analytics;
+    }
+
+    public void deletePerformanceRecord(Long id) {
+        PerformanceRecord record = performanceRecordRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Performance record not found with id: " + id));
+        
+        Vendor vendor = record.getVendor();
+        performanceRecordRepository.delete(record);
+        
+        // Recalculate vendor rating
+        updateVendorRating(vendor);
+    }
+
+    private void updateVendorRating(Vendor vendor) {
+        List<PerformanceRecord> records = performanceRecordRepository.findByVendorOrderByEvaluationDateDesc(vendor);
+        
+        if (records.isEmpty()) {
+            vendor.setRating(0);
+            vendor.setTotalReviews(0);
+        } else {
+            double totalScore = records.stream()
+                    .mapToDouble(PerformanceRecord::getOverallScore)
+                    .sum();
+            
+            double averageRating = totalScore / records.size();
+            vendor.setRating((int) Math.round(averageRating));
+            vendor.setTotalReviews(records.size());
+        }
+        
+        vendorRepository.save(vendor);
+    }
+
+    // Risk assessment methods
+    public String assessVendorRisk(Long vendorId) {
+        Map<String, Object> summary = getVendorPerformanceSummary(vendorId);
+        
+        double deliveryPerformance = (Double) summary.get("deliveryPerformance");
+        int currentRating = (Integer) summary.get("currentRating");
+        long totalOrders = (Long) summary.get("totalOrders");
+
+        // Risk factors
+        boolean lowRating = currentRating < 3;
+        boolean poorDelivery = deliveryPerformance < 80;
+        boolean fewOrders = totalOrders < 5;
+
+        if (lowRating && poorDelivery) {
+            return "HIGH";
+        } else if (lowRating || poorDelivery || fewOrders) {
+            return "MEDIUM";
+        } else {
+            return "LOW";
+        }
+    }
+
+    public List<Vendor> getHighRiskVendors() {
+        return vendorRepository.findHighRiskVendors();
+    }
+
+    public List<Vendor> getRecommendedVendors(String category, int minOrders) {
+        return vendorRepository.findRecommendedVendors(category, minOrders);
+    }
+}

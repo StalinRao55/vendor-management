@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VMS Premium | Vendor Management System</title>
+    <meta name="description" content="VMS Premium - The intelligent platform for end-to-end vendor management, procurement, and compliance.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #6366f1;
+            --accent-dark: #4f46e5;
+            --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #0a0a14;
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== ANIMATED BACKGROUND ===== */
+        .hero-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .orb-1 { width: 600px; height: 600px; background: rgba(99,102,241,0.25); top: -200px; right: -150px; animation-delay: 0s; }
+        .orb-2 { width: 400px; height: 400px; background: rgba(139,92,246,0.2); bottom: -100px; left: -100px; animation-delay: 3s; }
+        .orb-3 { width: 300px; height: 300px; background: rgba(236,72,153,0.15); top: 40%; left: 40%; animation-delay: 5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(20px, -30px) scale(1.05); }
+        }
+
+        /* ===== NAV ===== */
+        nav {
+            position: relative;
+            z-index: 10;
+            padding: 1.5rem 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            backdrop-filter: blur(12px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .brand i { color: #818cf8; font-size: 1.5rem; }
+
+        .nav-actions { display: flex; gap: 1rem; align-items: center; }
+
+        .btn-ghost {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 0.55rem 1.4rem;
+            border-radius: 100px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .btn-ghost:hover { background: rgba(255,255,255,0.12); color: white; }
+
+        .btn-primary-pill {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border: none;
+            color: white;
+            padding: 0.55rem 1.6rem;
+            border-radius: 100px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+        }
+
+        .btn-primary-pill:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(99,102,241,0.5);
+            color: white;
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            position: relative;
+            z-index: 5;
+            min-height: calc(100vh - 80px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .badge-pill-hero {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(99,102,241,0.15);
+            border: 1px solid rgba(99,102,241,0.35);
+            color: #a5b4fc;
+            padding: 0.4rem 1.2rem;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 2rem;
+            animation: fadeInDown 0.6s ease both;
+        }
+
+        h1 {
+            font-size: clamp(2.8rem, 6vw, 5.5rem);
+            font-weight: 800;
+            line-height: 1.08;
+            letter-spacing: -2px;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.7s ease both 0.1s;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #818cf8 10%, #c084fc 60%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-sub {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.55);
+            max-width: 600px;
+            line-height: 1.7;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.7s ease both 0.2s;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            animation: fadeInUp 0.7s ease both 0.3s;
+        }
+
+        .btn-hero {
+            padding: 1rem 2.5rem;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .btn-hero-primary {
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            color: white;
+            box-shadow: 0 8px 30px rgba(99,102,241,0.45);
+        }
+
+        .btn-hero-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 40px rgba(99,102,241,0.55);
+            color: white;
+        }
+
+        .btn-hero-outline {
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.8);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .btn-hero-outline:hover {
+            background: rgba(255,255,255,0.12);
+            color: white;
+        }
+
+        /* ===== FEATURE CARDS ===== */
+        .features {
+            position: relative;
+            z-index: 5;
+            padding: 4rem 4rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: var(--transition);
+        }
+
+        .feature-card:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(99,102,241,0.35);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .feature-card h4 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+        }
+
+        .feature-card p {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.6;
+        }
+
+        /* ===== ROLE SECTION ===== */
+        .roles {
+            position: relative;
+            z-index: 5;
+            padding: 2rem 4rem 6rem;
+        }
+
+        .section-label {
+            text-align: center;
+            color: rgba(255,255,255,0.4);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 3rem;
+        }
+
+        .roles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .role-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 20px;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            transition: var(--transition);
+            text-decoration: none;
+            color: white;
+            display: block;
+        }
+
+        .role-card:hover {
+            background: rgba(99,102,241,0.08);
+            border-color: rgba(99,102,241,0.4);
+            transform: translateY(-6px);
+            color: white;
+        }
+
+        .role-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .role-card h4 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .role-card p {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .role-card .role-arrow {
+            margin-top: 1.5rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #818cf8;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        @keyframes fadeInDown { from { opacity:0; transform: translateY(-20px); } to { opacity:1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- Animated BG -->
+    <div class="hero-bg">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Nav -->
+    <nav>
+        <div class="brand">
+            <i class="fas fa-truck-fast"></i>
+            VMS Premium
+        </div>
+        <div class="nav-actions">
+            <a href="vendor-registration.html" class="btn-ghost">Register as Vendor</a>
+            <a href="login.html" class="btn-primary-pill">Sign In</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="badge-pill-hero">
+            <i class="fas fa-star" style="font-size:0.75rem;"></i>
+            Enterprise Vendor Management Platform
+        </div>
+        <h1>Manage vendors<br><span class="gradient-text">smarter, faster.</span></h1>
+        <p class="hero-sub">
+            A unified platform for procurement, onboarding, purchase orders, invoices, and compliance — built for modern enterprises.
+        </p>
+        <div class="hero-cta">
+            <a href="login.html" class="btn-hero btn-hero-primary">
+                Get Started <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+            <a href="vendor-registration.html" class="btn-hero btn-hero-outline">
+                Vendor Onboarding
+            </a>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-users-gear"></i></div>
+                <h4>Vendor Onboarding</h4>
+                <p>Streamlined multi-step registration with document verification and compliance checks.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                <h4>Purchase Orders</h4>
+                <p>Create, track and manage purchase orders with real-time status updates and approvals.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-receipt"></i></div>
+                <h4>Invoice Management</h4>
+                <p>Automated invoice processing, matching and payment tracking for all your vendors.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                <h4>Analytics Dashboard</h4>
+                <p>Real-time insights into spend analysis, vendor performance and procurement KPIs.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Role Section -->
+    <section class="roles">
+        <div class="section-label">Access Portals</div>
+        <div class="section-title">Sign in to your workspace</div>
+        <div class="roles-grid">
+            <a href="login.html" class="role-card">
+                <div class="role-icon">🛡️</div>
+                <h4>Admin</h4>
+                <p>Manage vendors, approve registrations, oversee all operations.</p>
+                <div class="role-arrow">Enter Portal <i class="fas fa-arrow-right"></i></div>
+            </a>
+            <a href="login.html" class="role-card">
+                <div class="role-icon">🚚</div>
+                <h4>Vendor</h4>
+                <p>View purchase orders, submit invoices and track payments.</p>
+                <div class="role-arrow">Enter Portal <i class="fas fa-arrow-right"></i></div>
+            </a>
+            <a href="login.html" class="role-card">
+                <div class="role-icon">💼</div>
+                <h4>Employee</h4>
+                <p>Submit purchase requests and track approval status in real time.</p>
+                <div class="role-arrow">Enter Portal <i class="fas fa-arrow-right"></i></div>
+            </a>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

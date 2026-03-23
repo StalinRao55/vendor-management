@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | VMS Premium</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/modern-dashboard.css">
+    <script src="js/config.js"></script>
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <style>
+        .theme-toggle-floating {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .theme-toggle-floating:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+            color: white;
+        }
+        body {
+            background: radial-gradient(circle at top right, #6366f1, #4f46e5);
+            min-height: 100vh;
+        }
+        
+        .registration-container {
+            padding: 4rem 0;
+        }
+
+        .step-indicator-premium {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4rem;
+            position: relative;
+        }
+
+        .step-indicator-premium::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 1;
+        }
+
+        .premium-step {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            z-index: 2;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .premium-step.active {
+            background: white;
+            color: var(--accent-color);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .premium-step.completed {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+
+        .step-label-premium {
+            position: absolute;
+            top: 45px;
+            width: 120px;
+            text-align: center;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            transform: translateX(-33%);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-step { display: none; }
+        .form-step.active { display: block; animation: animate-fade-in 0.5s ease; }
+
+        .file-upload-premium {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .file-upload-premium:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: white;
+        }
+
+        .reg-input {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+            border-radius: 12px !important;
+            padding: 12px 16px !important;
+            appearance: none;
+        }
+
+        .reg-input:focus {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: rgba(255, 255, 255, 0.3) !important;
+            box-shadow: none !important;
+        }
+
+        label { color: rgba(255, 255, 255, 0.7); font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+
+        .btn-nav {
+            border-radius: 12px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+    </style>
+</head>
+<body style="background: radial-gradient(circle at top left, #6366f1, #4f46e5); min-height: 100vh;">
+    <a href="javascript:void(0)" id="themeToggle" class="theme-toggle-floating">
+        <i class="fas fa-moon"></i>
+    </a>
+    <div class="container-fluid registration-container">
+        <div class="row justify-content-center">
+            <div class="col-lg-11">
+                <div class="text-center mb-5 animate-fade-in">
+                    <h1 class="fw-bold text-white mb-2">Onboarding Portal</h1>
+                    <p class="text-white-50">Join the VMS Premium network as an authorized vendor.</p>
+                </div>
+
+                <div class="login-glass-card w-100 max-w-none animate-fade-in">
+                    <!-- Step Indicator -->
+                    <div class="step-indicator-premium">
+                        <div class="premium-step active" id="step1-indicator">
+                            1 <span class="step-label-premium">Basic Info</span>
+                        </div>
+                        <div class="premium-step" id="step2-indicator">
+                            2 <span class="step-label-premium">Business</span>
+                        </div>
+                        <div class="premium-step" id="step3-indicator">
+                            3 <span class="step-label-premium">Documents</span>
+                        </div>
+                        <div class="premium-step" id="step4-indicator">
+                            4 <span class="step-label-premium">Review</span>
+                        </div>
+                    </div>
+
+                    <form id="vendorRegistrationForm" enctype="multipart/form-data">
+                        <!-- Step 1: Basic -->
+                        <div class="form-step active" id="step1">
+                            <h4 class="text-white fw-bold mb-4">Core Information</h4>
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <label>Vendor Full Name</label>
+                                    <input type="text" class="form-control reg-input" name="name" placeholder="Acme Corp" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label>Primary Contact (Person)</label>
+                                    <input type="text" class="form-control reg-input" name="contactPerson" placeholder="John Doe" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label>Official Email</label>
+                                    <input type="email" class="form-control reg-input" name="email" placeholder="contact@acme.com" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label>Contact Phone</label>
+                                    <input type="tel" class="form-control reg-input" name="phone" placeholder="+1 (555) 000-0000" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label>Service Area</label>
+                                    <input type="text" class="form-control reg-input" name="serviceType" placeholder="Cloud Infrastructure" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label>Industry Category</label>
+                                    <select class="form-select reg-input" name="category" required>
+                                        <option value="" class="bg-dark">Select Industry</option>
+                                        <option value="IT" class="bg-dark">IT Services</option>
+                                        <option value="LOGISTICS" class="bg-dark">Logistics</option>
+                                        <option value="MATERIALS" class="bg-dark">Materials</option>
+                                        <option value="CONSULTING" class="bg-dark">Consulting</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end mt-5">
+                                <button type="button" class="btn btn-nav btn-primary" onclick="nextStep(1)">
+                                    Continue <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Business -->
+                        <div class="form-step" id="step2">
+                            <h4 class="text-white fw-bold mb-4">Enterprise Verification</h4>
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <label>Registered Company Name</label>
+                                    <input type="text" class="form-control reg-input" name="companyName" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label>GST Number / Tax ID</label>
+                                    <input type="text" class="form-control reg-input" name="gstNumber" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label>PAN / Corporate ID</label>
+                                    <input type="text" class="form-control reg-input" name="panNumber" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label>Corporate Website</label>
+                                    <input type="url" class="form-control reg-input" name="website">
+                                </div>
+                                <div class="col-md-12">
+                                    <label>Bank Account Number (Encrypted)</label>
+                                    <input type="text" class="form-control reg-input" name="bankAccountNumber">
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-5">
+                                <button type="button" class="btn btn-nav btn-outline-light" onclick="prevStep(2)">Back</button>
+                                <button type="button" class="btn btn-nav btn-primary" onclick="nextStep(2)">Continue</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Documents -->
+                        <div class="form-step" id="step3">
+                            <h4 class="text-white fw-bold mb-4">Secure Document Vault</h4>
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <label>GST / Tax Certificate</label>
+                                    <div class="file-upload-premium" onclick="document.getElementById('gstFile').click()">
+                                        <i class="fas fa-cloud-upload-alt text-white-50 mb-3 fa-2x"></i>
+                                        <p class="text-white small mb-0">Upload PDF</p>
+                                        <input type="file" id="gstFile" name="gstFile" class="d-none" accept=".pdf">
+                                    </div>
+                                    <div id="gstFilePreview" class="mt-2 small text-white-50"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label>PAN / Identity Card</label>
+                                    <div class="file-upload-premium" onclick="document.getElementById('panFile').click()">
+                                        <i class="fas fa-file-invoice text-white-50 mb-3 fa-2x"></i>
+                                        <p class="text-white small mb-0">Upload Image/PDF</p>
+                                        <input type="file" id="panFile" name="panFile" class="d-none" accept=".pdf,.jpg,.jpeg,.png">
+                                    </div>
+                                    <div id="panFilePreview" class="mt-2 small text-white-50"></div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-5">
+                                <button type="button" class="btn btn-nav btn-outline-light" onclick="prevStep(3)">Back</button>
+                                <button type="button" class="btn btn-nav btn-primary" onclick="nextStep(3)">Review Application</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Review -->
+                        <div class="form-step" id="step4">
+                            <h4 class="text-white fw-bold mb-4">Submission Review</h4>
+                            <div class="glass-card mb-4" style="background: rgba(255,255,255,0.05)">
+                                <div id="review-content" class="text-white small">
+                                    <!-- Dynamic review content -->
+                                </div>
+                            </div>
+                            <div class="form-check mb-4">
+                                <input class="form-check-input" type="checkbox" id="termsCheck" required>
+                                <label class="form-check-label text-white-50 small" for="termsCheck">
+                                    I certify that the information provided is accurate and representable.
+                                </label>
+                            </div>
+                            <div class="d-flex justify-content-between mt-5">
+                                <button type="button" class="btn btn-nav btn-outline-light" onclick="prevStep(4)">Back</button>
+                                <button type="submit" class="btn btn-nav btn-success bg-success border-0 px-5">
+                                    Confirm Submission <i class="fas fa-paper-plane ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/theme.js"></script>
+    <script>
+        let currentStep = 1;
+
+        function showStep(step) {
+            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.premium-step').forEach(s => s.classList.remove('active', 'completed'));
+            
+            document.getElementById('step' + step).classList.add('active');
+            
+            for (let i = 1; i <= step; i++) {
+                const indicator = document.getElementById('step' + i + '-indicator');
+                if (indicator) {
+                    if (i < step) indicator.classList.add('completed');
+                    else indicator.classList.add('active');
+                }
+            }
+        }
+
+        function nextStep(step) {
+            const currentElement = document.getElementById('step' + step);
+            const inputs = currentElement.querySelectorAll('[required]');
+            let valid = true;
+            
+            inputs.forEach(input => {
+                if (!input.value) {
+                    input.classList.add('is-invalid');
+                    valid = false;
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            });
+
+            if (valid) {
+                currentStep++;
+                showStep(currentStep);
+                if (currentStep === 4) populateReview();
+            }
+        }
+
+        function prevStep(step) {
+            currentStep--;
+            showStep(currentStep);
+        }
+
+        function populateReview() {
+            const form = document.getElementById('vendorRegistrationForm');
+            const data = new FormData(form);
+            let html = '<div class="row g-3">';
+            for(let [key, value] of data.entries()) {
+                if(value instanceof File) {
+                    html += `<div class="col-6"><span class="text-white-50">${key}:</span> <br>${value.name || 'None'}</div>`;
+                } else {
+                    html += `<div class="col-6"><span class="text-white-50">${key}:</span> <br>${value}</div>`;
+                }
+            }
+            html += '</div>';
+            document.getElementById('review-content').innerHTML = html;
+        }
+
+        ['gstFile', 'panFile'].forEach(id => {
+            const input = document.getElementById(id);
+            const preview = document.getElementById(id + 'Preview');
+            input.addEventListener('change', () => {
+                if(input.files[0]) preview.innerText = 'Selected: ' + input.files[0].name;
+            });
+        });
+
+        document.getElementById('vendorRegistrationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if(!document.getElementById('termsCheck').checked) return alert('Please certifiy the information');
+            
+            const formData = new FormData(e.target);
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/vendor-registration/register`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await res.json();
+                if(result.success) {
+                    alert('Submitted successfully! Redirecting to login...');
+                    window.location.href = 'login.html';
+                } else {
+                    alert('Submission failed: ' + result.message);
+                }
+            } catch(e) {
+                alert('Communication error. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>

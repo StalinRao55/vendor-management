@@ -1,0 +1,331 @@
+package com.vms.vendor_management.service;
+
+import com.vms.vendor_management.model.Invoice;
+import com.vms.vendor_management.model.PurchaseOrder;
+import com.vms.vendor_management.model.Vendor;
+import com.vms.vendor_management.model.enums.InvoiceStatus;
+import com.vms.vendor_management.model.enums.OrderStatus;
+import com.vms.vendor_management.repository.InvoiceRepository;
+import com.vms.vendor_management.repository.PurchaseOrderRepository;
+import com.vms.vendor_management.repository.VendorRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class ReportService {
+
+    @Autowired
+    private VendorRepository vendorRepository;
+
+    @Autowired
+    private PurchaseOrderRepository purchaseOrderRepository;
+
+    @Autowired
+    private InvoiceRepository invoiceRepository;
+
+    public Map<String, Object> getVendorPerformanceReport() {
+        Map<String, Object> report = new HashMap<>();
+        
+        // Vendor statistics
+        long totalVendors = vendorRepository.count();
+        long activeVendors = vendorRepository.countByStatus(com.vms.vendor_management.model.enums.VendorStatus.ACTIVE);
+        long inactiveVendors = vendorRepository.countByStatus(com.vms.vendor_management.model.enums.VendorStatus.INACTIVE);
+        
+        report.put("totalVendors", totalVendors);
+        report.put("activeVendors", activeVendors);
+        report.put("inactiveVendors", inactiveVendors);
+        report.put("vendorGrowthRate", calculateVendorGrowthRate());
+
+        // Vendor distribution by category
+        Map<String, Long> vendorByCategory = new HashMap<>();
+        for (String category : new String[]{"IT", "LOGISTICS", "MATERIALS", "CONSULTING", "MAINTENANCE", "OTHER"}) {
+            vendorByCategory.put(category, vendorRepository.countByCategory(com.vms.vendor_management.model.enums.VendorCategory.valueOf(category)));
+        }
+        report.put("vendorByCategory", vendorByCategory);
+
+        // Top performing vendors
+        report.put("topPerformingVendors", vendorRepository.findTopPerformingVendors(5));
+        
+        // Risk assessment
+        report.put("highRiskVendors", vendorRepository.findHighRiskVendors().size());
+        report.put("mediumRiskVendors", vendorRepository.findMediumRiskVendors().size());
+        report.put("lowRiskVendors", vendorRepository.findLowRiskVendors().size());
+
+        return report;
+    }
+
+    public Map<String, Object> getPurchaseOrderReport(LocalDate startDate, LocalDate endDate) {
+        Map<String, Object> report = new HashMap<>();
+        
+        List<PurchaseOrder> orders = purchaseOrderRepository.findByCreatedAtBetween(startDate, endDate);
+        
+        // Basic statistics
+        report.put("totalOrders", orders.size());
+        report.put("totalAmount", calculateTotalAmount(orders));
+        report.put("averageOrderValue", calculateAverageOrderValue(orders));
+
+        // Status distribution
+        Map<String, Long> statusDistribution = new HashMap<>();
+        for (OrderStatus status : OrderStatus.values()) {
+            statusDistribution.put(status.name(), 
+                orders.stream().filter(po -> po.getStatus() == status).count());
+        }
+        report.put("statusDistribution", statusDistribution);
+
+        // Vendor analysis
+        Map<String, Object> vendorAnalysis = new HashMap<>();
+        vendorAnalysis.put("ordersPerVendor", getOrdersPerVendor(orders));
+        vendorAnalysis.put("topVendorsByAmount", getTopVendorsByAmount(orders, 5));
+        report.put("vendorAnalysis", vendorAnalysis);
+
+        // Timeline analysis
+        report.put("ordersByMonth", getOrdersByMonth(orders));
+        report.put("ordersByWeek", getOrdersByWeek(orders));
+
+        return report;
+    }
+
+    public Map<String, Object> getInvoiceReport(LocalDate startDate, LocalDate endDate) {
+        Map<String, Object> report = new HashMap<>();
+        
+        List<Invoice> invoices = invoiceRepository.findByCreatedAtBetween(startDate, endDate);
+        
+        // Basic statistics
+        report.put("totalInvoices", invoices.size());
+        report.put("totalAmount", calculateTotalInvoiceAmount(invoices));
+        report.put("averageInvoiceValue", calculateAverageInvoiceValue(invoices));
+
+        // Status distribution
+        Map<String, Long> statusDistribution = new HashMap<>();
+        for (InvoiceStatus status : InvoiceStatus.values()) {
+            statusDistribution.put(status.name(), 
+                invoices.stream().filter(inv -> inv.getStatus() == status).count());
+        }
+        report.put("statusDistribution", statusDistribution);
+
+        // Payment analysis
+        Map<String, Object> paymentAnalysis = new HashMap<>();
+        paymentAnalysis.put("paidInvoices", invoices.stream().filter(inv -> inv.getStatus() == InvoiceStatus.PAID).count());
+        paymentAnalysis.put("unpaidInvoices", invoices.stream().filter(inv -> inv.getStatus() != InvoiceStatus.PAID).count());
+        paymentAnalysis.put("overdueInvoices", invoices.stream().filter(inv -> inv.getStatus() == InvoiceStatus.OVERDUE).count());
+        paymentAnalysis.put("totalOverdueAmount", calculateOverdueAmount(invoices));
+        report.put("paymentAnalysis", paymentAnalysis);
+
+        // Vendor analysis
+        report.put("invoicesPerVendor", getInvoicesPerVendor(invoices));
+        report.put("topVendorsByInvoiceAmount", getTopVendorsByInvoiceAmount(invoices, 5));
+
+        // Timeline analysis
+        report.put("invoicesByMonth", getInvoicesByMonth(invoices));
+        report.put("invoicesByWeek", getInvoicesByWeek(invoices));
+
+        return report;
+    }
+
+    public Map<String, Object> getFinancialReport(LocalDate startDate, LocalDate endDate) {
+        Map<String, Object> report = new HashMap<>();
+        
+        // Get all data for the period
+        List<PurchaseOrder> orders = purchaseOrderRepository.findByCreatedAtBetween(startDate, endDate);
+        List<Invoice> invoices = invoiceRepository.findByCreatedAtBetween(startDate, endDate);
+
+        // Revenue and expenditure
+        BigDecimal totalPOAmount = calculateTotalAmount(orders);
+        BigDecimal totalInvoiceAmount = calculateTotalInvoiceAmount(invoices);
+        BigDecimal totalPaidAmount = calculateTotalPaidAmount(invoices);
+
+        report.put("totalPurchaseOrders", orders.size());
+        report.put("totalInvoices", invoices.size());
+        report.put("totalPOAmount", totalPOAmount);
+        report.put("totalInvoiceAmount", totalInvoiceAmount);
+        report.put("totalPaidAmount", totalPaidAmount);
+        report.put("pendingPayments", totalInvoiceAmount.subtract(totalPaidAmount));
+
+        // Financial trends
+        report.put("monthlyExpenditure", getMonthlyExpenditure(orders, invoices));
+        report.put("weeklyExpenditure", getWeeklyExpenditure(orders, invoices));
+
+        // Vendor spend analysis
+        report.put("vendorSpendAnalysis", getVendorSpendAnalysis(orders, invoices));
+
+        // Payment terms analysis
+        report.put("averagePaymentDays", calculateAveragePaymentDays(invoices));
+        report.put("paymentTermsCompliance", calculatePaymentTermsCompliance(invoices));
+
+        return report;
+    }
+
+    public Map<String, Object> getOperationalReport() {
+        Map<String, Object> report = new HashMap<>();
+
+        // Current status overview
+        long totalVendors = vendorRepository.count();
+        long totalOrders = purchaseOrderRepository.count();
+        long totalInvoices = invoiceRepository.count();
+
+        report.put("totalVendors", totalVendors);
+        report.put("totalOrders", totalOrders);
+        report.put("totalInvoices", totalInvoices);
+
+        // Pending actions
+        long pendingApprovals = purchaseOrderRepository.countByStatus(OrderStatus.PENDING_APPROVAL);
+        long pendingInvoices = invoiceRepository.countByStatus(InvoiceStatus.PENDING_APPROVAL);
+        long overdueInvoices = invoiceRepository.countByStatus(InvoiceStatus.OVERDUE);
+
+        report.put("pendingApprovals", pendingApprovals);
+        report.put("pendingInvoices", pendingInvoices);
+        report.put("overdueInvoices", overdueInvoices);
+
+        // Efficiency metrics
+        report.put("averageOrderProcessingTime", calculateAverageOrderProcessingTime());
+        report.put("averageInvoiceProcessingTime", calculateAverageInvoiceProcessingTime());
+        report.put("vendorOnboardingTime", calculateAverageVendorOnboardingTime());
+
+        // System utilization
+        report.put("activeUsers", getUserActivityReport());
+        report.put("systemUptime", getSystemUptime());
+
+        return report;
+    }
+
+    // Helper methods for calculations
+
+    private double calculateVendorGrowthRate() {
+        // Implementation for vendor growth rate calculation
+        return 0.0;
+    }
+
+    private BigDecimal calculateTotalAmount(List<PurchaseOrder> orders) {
+        return orders.stream()
+                .map(PurchaseOrder::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal calculateAverageOrderValue(List<PurchaseOrder> orders) {
+        if (orders.isEmpty()) return BigDecimal.ZERO;
+        return calculateTotalAmount(orders).divide(BigDecimal.valueOf(orders.size()), 2, BigDecimal.ROUND_HALF_UP);
+    }
+
+    private BigDecimal calculateTotalInvoiceAmount(List<Invoice> invoices) {
+        return invoices.stream()
+                .map(Invoice::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal calculateAverageInvoiceValue(List<Invoice> invoices) {
+        if (invoices.isEmpty()) return BigDecimal.ZERO;
+        return calculateTotalInvoiceAmount(invoices).divide(BigDecimal.valueOf(invoices.size()), 2, BigDecimal.ROUND_HALF_UP);
+    }
+
+    private BigDecimal calculateOverdueAmount(List<Invoice> invoices) {
+        return invoices.stream()
+                .filter(inv -> inv.getStatus() == InvoiceStatus.OVERDUE)
+                .map(Invoice::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal calculateTotalPaidAmount(List<Invoice> invoices) {
+        return invoices.stream()
+                .filter(inv -> inv.getStatus() == InvoiceStatus.PAID)
+                .map(Invoice::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    // Placeholder methods for complex calculations
+    private Map<String, Object> getOrdersPerVendor(List<PurchaseOrder> orders) {
+        // Implementation for orders per vendor
+        return new HashMap<>();
+    }
+
+    private Map<String, Object> getTopVendorsByAmount(List<PurchaseOrder> orders, int limit) {
+        // Implementation for top vendors by amount
+        return new HashMap<>();
+    }
+
+    private Map<String, Object> getOrdersByMonth(List<PurchaseOrder> orders) {
+        // Implementation for orders by month
+        return new HashMap<>();
+    }
+
+    private Map<String, Object> getOrdersByWeek(List<PurchaseOrder> orders) {
+        // Implementation for orders by week
+        return new HashMap<>();
+    }
+
+    private Map<String, Object> getInvoicesPerVendor(List<Invoice> invoices) {
+        // Implementation for invoices per vendor
+        return new HashMap<>();
+    }
+
+    private Map<String, Object> getTopVendorsByInvoiceAmount(List<Invoice> invoices, int limit) {
+        // Implementation for top vendors by invoice amount
+        return new HashMap<>();
+    }
+
+    private Map<String, Object> getInvoicesByMonth(List<Invoice> invoices) {
+        // Implementation for invoices by month
+        return new HashMap<>();
+    }
+
+    private Map<String, Object> getInvoicesByWeek(List<Invoice> invoices) {
+        // Implementation for invoices by week
+        return new HashMap<>();
+    }
+
+    private Map<String, Object> getMonthlyExpenditure(List<PurchaseOrder> orders, List<Invoice> invoices) {
+        // Implementation for monthly expenditure
+        return new HashMap<>();
+    }
+
+    private Map<String, Object> getWeeklyExpenditure(List<PurchaseOrder> orders, List<Invoice> invoices) {
+        // Implementation for weekly expenditure
+        return new HashMap<>();
+    }
+
+    private Map<String, Object> getVendorSpendAnalysis(List<PurchaseOrder> orders, List<Invoice> invoices) {
+        // Implementation for vendor spend analysis
+        return new HashMap<>();
+    }
+
+    private double calculateAveragePaymentDays(List<Invoice> invoices) {
+        // Implementation for average payment days
+        return 0.0;
+    }
+
+    private double calculatePaymentTermsCompliance(List<Invoice> invoices) {
+        // Implementation for payment terms compliance
+        return 0.0;
+    }
+
+    private double calculateAverageOrderProcessingTime() {
+        // Implementation for average order processing time
+        return 0.0;
+    }
+
+    private double calculateAverageInvoiceProcessingTime() {
+        // Implementation for average invoice processing time
+        return 0.0;
+    }
+
+    private double calculateAverageVendorOnboardingTime() {
+        // Implementation for average vendor onboarding time
+        return 0.0;
+    }
+
+    private Map<String, Object> getUserActivityReport() {
+        // Implementation for user activity report
+        return new HashMap<>();
+    }
+
+    private double getSystemUptime() {
+        // Implementation for system uptime
+        return 99.9;
+    }
+}

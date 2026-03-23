@@ -1,0 +1,16 @@
+package com.vms.vendor_management.model.enums;
+
+public enum NotificationType {
+    PO_CREATED,
+    PO_APPROVED,
+    PO_CANCELLED,
+    DELIVERY_UPDATE,
+    INVOICE_SUBMITTED,
+    PAYMENT_APPROVED,
+    PAYMENT_COMPLETED,
+    CONTRACT_EXPIRY,
+    CONTRACT_RENEWAL,
+    VENDOR_APPROVAL,
+    VENDOR_REJECTION,
+    SYSTEM_ALERT
+}

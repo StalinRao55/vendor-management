@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | VMS Premium</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/modern-dashboard.css">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="brand">
+            <i class="fas fa-shield-halved"></i>
+            <span>VMS ADMIN</span>
+        </div>
+        <nav class="nav-menu">
+            <div class="nav-item">
+                <a class="nav-link active" href="javascript:void(0)" data-section="vendors">
+                    <i class="fas fa-users-viewfinder"></i> Vendors
+                </a>
+            </div>
+            <div class="nav-item">
+                <a class="nav-link" href="javascript:void(0)" data-section="purchaseRequests">
+                    <i class="fas fa-file-invoice-dollar"></i> Requests
+                </a>
+            </div>
+            <div class="nav-item">
+                <a class="nav-link" href="javascript:void(0)" data-section="purchaseOrders">
+                    <i class="fas fa-cart-shopping"></i> Orders
+                </a>
+            </div>
+            <div class="nav-item">
+                <a class="nav-link" href="javascript:void(0)" data-section="invoices">
+                    <i class="fas fa-receipt"></i> Invoices
+                </a>
+            </div>
+            <div class="nav-item">
+                <a class="nav-link" href="javascript:void(0)" data-section="contracts">
+                    <i class="fas fa-file-signature"></i> Contracts
+                </a>
+            </div>
+            <div class="nav-item">
+                <a class="nav-link" href="javascript:void(0)" data-section="performance">
+                    <i class="fas fa-gauge-high"></i> Performance
+                </a>
+            </div>
+            <div class="nav-item">
+                <a class="nav-link" href="javascript:void(0)" data-section="transactions">
+                    <i class="fas fa-money-bill-transfer"></i> Billing
+                </a>
+            </div>
+            <div class="nav-item">
+                <a class="nav-link" href="javascript:void(0)" data-section="reports">
+                    <i class="fas fa-chart-simple"></i> Analytics
+                </a>
+            </div>
+            <div class="nav-item">
+                <a class="nav-link" href="javascript:void(0)" data-section="notifications">
+                    <i class="fas fa-bell"></i> Alerts
+                </a>
+            </div>
+            <div class="nav-item">
+                <a class="nav-link" href="javascript:void(0)" id="themeToggle">
+                    <i class="fas fa-moon"></i> Theme
+                </a>
+            </div>
+            <div class="nav-item">
+                <a class="nav-link" href="/admin-vendor-approval">
+                    <i class="fas fa-user-check"></i> Admin Approval
+                </a>
+            </div>
+            
+            <div style="margin: 20px 0; border-top: 1px solid #f1f5f9;"></div>
+
+            <div class="nav-item">
+                <a class="nav-link" href="/vendor-registration">
+                    <i class="fas fa-user-plus"></i> New Vendor
+                </a>
+            </div>
+            <div class="nav-item">
+                <a class="nav-link text-danger" href="/logout">
+                    <i class="fas fa-power-off"></i> Logout
+                </a>
+            </div>
+        </nav>
+    </div>
+            
+            <!-- Main Content -->
+            <div class="main-content">
+                <header class="d-flex justify-content-between align-items-center mb-5 animate-fade-in">
+                    <div>
+                        <h1 class="fw-bold mb-1">System Overview</h1>
+                        <p class="text-secondary">Welcome back, Admin. Here's what's happening today.</p>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <button id="addVendorBtn" class="btn-premium" onclick="showAddVendorModal()" style="display: none;">
+                            <i class="fas fa-plus"></i> Add Vendor
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid animate-fade-in">
+                    <div class="stat-card" style="background: var(--primary-gradient);">
+                        <i class="fas fa-users"></i>
+                        <h3 id="totalVendors">0</h3>
+                        <p>Total Vendors</p>
+                    </div>
+                    <div class="stat-card" style="background: #10b981;">
+                        <i class="fas fa-circle-check"></i>
+                        <h3 id="activeVendors">0</h3>
+                        <p>Active Vendors</p>
+                    </div>
+                    <div class="stat-card" style="background: #6366f1;">
+                        <i class="fas fa-file-contract"></i>
+                        <h3 id="totalContracts">0</h3>
+                        <p>Active Contracts</p>
+                    </div>
+                    <div class="stat-card" style="background: #f43f5e;">
+                        <i class="fas fa-bolt"></i>
+                        <h3 id="totalTransactions">0</h3>
+                        <p>Transactions</p>
+                    </div>
+                </div>
+                
+                <!-- Vendors Section -->
+                <div id="vendorsSection" class="animate-fade-in">
+                    <div class="glass-card p-0 overflow-hidden">
+                        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-white">
+                            <h5 class="mb-0 fw-bold">Manage Vendors</h5>
+                            <div class="d-flex gap-2">
+                                <span class="badge-pill badge-info">Live Database</span>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="custom-table" id="vendorsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Service Type</th>
+                                        <th>Payment</th>
+                                        <th>Status</th>
+                                        <th id="actionsHeader">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vendorsTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contracts Section -->
+                <div id="contractsSection" style="display: none;" class="animate-fade-in">
+                    <div class="glass-card p-0 overflow-hidden">
+                        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-white">
+                            <h5 class="mb-0 fw-bold">Active Contracts</h5>
+                            <button id="addContractBtn" class="btn-premium btn-sm" onclick="showAddContractModal()" style="display: none;">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Title</th>
+                                        <th>Vendor</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="contractsTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Purchase Orders Section -->
+                <div id="purchaseOrdersSection" style="display: none;" class="animate-fade-in">
+                    <div class="glass-card p-0 overflow-hidden">
+                        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-white">
+                            <h5 class="mb-0 fw-bold">Purchase Orders</h5>
+                            <button id="addPoBtn" class="btn-premium btn-sm" onclick="showAddPoModal()" style="display: none;">
+                                <i class="fas fa-plus"></i> Create PO
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Order Number</th>
+                                        <th>Vendor</th>
+                                        <th>Order Date</th>
+                                        <th>Total Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="purchaseOrdersTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoices Section -->
+                <div id="invoicesSection" style="display: none;" class="animate-fade-in">
+                    <div class="glass-card p-0 overflow-hidden">
+                        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-white">
+                            <h5 class="mb-0 fw-bold">Vendor Invoices</h5>
+                            <button id="addInvoiceBtn" class="btn-premium btn-sm" onclick="showAddInvoiceModal()" style="display: none;">
+                                <i class="fas fa-plus"></i> Process
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Invoice #</th>
+                                        <th>Vendor</th>
+                                        <th>Issue Date</th>
+                                        <th>Due Date</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoicesTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Performance Section -->
+                <div id="performanceSection" style="display: none;" class="animate-fade-in">
+                    <div class="glass-card p-0 overflow-hidden">
+                        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-white">
+                            <h5 class="mb-0 fw-bold">Vendor Performance</h5>
+                            <button id="addPerformanceBtn" class="btn-premium btn-sm" onclick="showAddPerformanceModal()" style="display: none;">
+                                <i class="fas fa-star"></i> Review
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Vendor</th>
+                                        <th>Review Date</th>
+                                        <th>Rating</th>
+                                        <th>Comments</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="performanceTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Transactions Section -->
+                <div id="transactionsSection" style="display: none;" class="animate-fade-in">
+                    <div class="glass-card p-0 overflow-hidden">
+                        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-white">
+                            <h5 class="mb-0 fw-bold">Recent Transactions</h5>
+                            <button id="addTransactionBtn" class="btn-premium btn-sm" onclick="showAddTransactionModal()" style="display: none;">
+                                <i class="fas fa-plus"></i> Record
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Vendor</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactionsTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Purchase Requests Section -->
+                <div id="purchaseRequestsSection" style="display: none;" class="animate-fade-in">
+                    <div class="glass-card p-0 overflow-hidden">
+                        <div class="px-4 py-3 border-bottom bg-white">
+                            <h5 class="mb-0 fw-bold">Pending Purchase Requests</h5>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="custom-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Title</th>
+                                        <th>Employee</th>
+                                        <th>Suggested Vendor</th>
+                                        <th>Amount</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="purchaseRequestsTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Section -->
+                <div id="reportsSection" style="display: none;" class="animate-fade-in">
+                    <div class="glass-card">
+                        <h5 class="fw-bold mb-4">Analytics & Visual Insights</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="glass-card p-3 h-100" style="background: rgba(255,255,255,0.5);">
+                                    <p class="text-secondary small fw-bold text-uppercase">Orders by Status</p>
+                                    <ul class="list-group list-group-flush bg-transparent" id="poStatsList"></ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="glass-card p-3 h-100" style="background: rgba(255,255,255,0.5);">
+                                    <p class="text-secondary small fw-bold text-uppercase">Invoices by Status</p>
+                                    <ul class="list-group list-group-flush bg-transparent" id="invoiceStatsList"></ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications Section -->
+                <div id="notificationsSection" style="display: none;" class="animate-fade-in">
+                    <div class="glass-card p-0 overflow-hidden">
+                        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-white">
+                            <h5 class="mb-0 fw-bold">System Notifications</h5>
+                            <button class="btn-premium btn-sm" onclick="markAllNotificationsRead(1)">Mark All Read</button>
+                        </div>
+                        <div class="list-group list-group-flush" id="notificationsList">
+                            <!-- Notifications go here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Vendor Modal -->
+    <div class="modal fade" id="addVendorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Vendor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addVendorForm">
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone</label>
+                            <input type="text" class="form-control" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Service Type</label>
+                            <input type="text" class="form-control" name="serviceType" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Payment</label>
+                            <input type="number" class="form-control" name="payment" step="0.01" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveVendor()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Contract Modal -->
+    <div class="modal fade" id="addContractModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Contract</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addContractForm">
+                        <div class="mb-3">
+                            <label class="form-label">Vendor</label>
+                            <select class="form-select" name="vendorId" id="contractVendorSelect" required>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Title</label>
+                            <input type="text" class="form-control" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-control" name="startDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">End Date</label>
+                            <input type="date" class="form-control" name="endDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Value</label>
+                            <input type="number" class="form-control" name="value" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Terms</label>
+                            <textarea class="form-control" name="terms" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveContract()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Performance Modal -->
+    <div class="modal fade" id="addPerformanceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Performance Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addPerformanceForm">
+                        <div class="mb-3">
+                            <label class="form-label">Vendor</label>
+                            <select class="form-select" name="vendorId" id="performanceVendorSelect" required>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Review Date</label>
+                            <input type="date" class="form-control" name="reviewDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Rating (1-5)</label>
+                            <input type="number" class="form-control" name="rating" min="1" max="5" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Comments</label>
+                            <textarea class="form-control" name="comments" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="savePerformance()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Transaction Modal -->
+    <div class="modal fade" id="addTransactionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Transaction</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addTransactionForm">
+                        <div class="mb-3">
+                            <label class="form-label">Vendor</label>
+                            <select class="form-select" name="vendorId" id="transactionVendorSelect" required>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Transaction Date</label>
+                            <input type="date" class="form-control" name="transactionDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Amount</label>
+                            <input type="number" class="form-control" name="amount" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" name="type" required>
+                                <option value="PAYMENT">Payment</option>
+                                <option value="RECEIPT">Receipt</option>
+                                <option value="REFUND">Refund</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" name="status" required>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="FAILED">Failed</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reference</label>
+                            <input type="text" class="form-control" name="reference">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveTransaction()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentSection = 'vendors';
+        let isAdmin = false;
+        
+        // Check user role - hide buttons by default
+        async function checkUserRole() {
+            try {
+                const response = await fetch('/api/user', {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const userInfo = await response.json();
+                    isAdmin = userInfo.isAdmin === true;
+                    
+                    // Show admin controls only if admin
+                    if (isAdmin) {
+                        showAdminControls();
+                    }
+                } else {
+                    // Not authenticated or error - hide controls
+                    hideAdminControls();
+                }
+            } catch (e) {
+                console.log('Role check failed, hiding controls');
+                hideAdminControls();
+                isAdmin = false;
+            }
+        }
+        
+        function showAdminControls() {
+            document.getElementById('addVendorBtn').style.display = 'block';
+            document.getElementById('addContractBtn').style.display = 'block';
+            document.getElementById('addPoBtn').style.display = 'block';
+            document.getElementById('addInvoiceBtn').style.display = 'block';
+            document.getElementById('addPerformanceBtn').style.display = 'block';
+            document.getElementById('addTransactionBtn').style.display = 'block';
+            document.getElementById('actionsHeader').style.display = 'table-cell';
+        }
+        
+        function hideAdminControls() {
+            document.getElementById('addVendorBtn').style.display = 'none';
+            document.getElementById('addContractBtn').style.display = 'none';
+            document.getElementById('addPoBtn').style.display = 'none';
+            document.getElementById('addInvoiceBtn').style.display = 'none';
+            document.getElementById('addPerformanceBtn').style.display = 'none';
+            document.getElementById('addTransactionBtn').style.display = 'none';
+            document.getElementById('actionsHeader').style.display = 'none';
+        }
+        
+        async function populateVendorSelect(selectId) {
+            try {
+                const response = await fetch('/api/vendors');
+                const vendors = await response.json();
+                const select = document.getElementById(selectId);
+                select.innerHTML = vendors.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+            } catch (error) {
+                console.error('Error loading vendors:', error);
+            }
+        }
+        
+        function showAddContractModal() {
+            populateVendorSelect('contractVendorSelect');
+            new bootstrap.Modal(document.getElementById('addContractModal')).show();
+        }
+        
+        function showAddPerformanceModal() {
+            populateVendorSelect('performanceVendorSelect');
+            new bootstrap.Modal(document.getElementById('addPerformanceModal')).show();
+        }
+        
+        function showAddTransactionModal() {
+            populateVendorSelect('transactionVendorSelect');
+            new bootstrap.Modal(document.getElementById('addTransactionModal')).show();
+        }
+        
+        async function saveContract() {
+            const form = document.getElementById('addContractForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            data.value = parseFloat(data.value);
+            const vendorId = data.vendorId;
+            delete data.vendorId;
+            
+            try {
+                const response = await fetch(`/api/vendors/${vendorId}/contracts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('addContractModal')).hide();
+                    form.reset();
+                    loadContracts();
+                }
+            } catch (error) {
+                console.error('Error saving contract:', error);
+            }
+        }
+        
+        async function savePerformance() {
+            const form = document.getElementById('addPerformanceForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            data.rating = parseInt(data.rating);
+            const vendorId = data.vendorId;
+            delete data.vendorId;
+            
+            try {
+                const response = await fetch(`/api/vendors/${vendorId}/performance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('addPerformanceModal')).hide();
+                    form.reset();
+                    loadPerformance();
+                }
+            } catch (error) {
+                console.error('Error saving performance:', error);
+            }
+        }
+        
+        async function saveTransaction() {
+            const form = document.getElementById('addTransactionForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            data.amount = parseFloat(data.amount);
+            const vendorId = data.vendorId;
+            delete data.vendorId;
+            
+            try {
+                const response = await fetch(`/api/vendors/${vendorId}/transactions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('addTransactionModal')).hide();
+                    form.reset();
+                    loadTransactions();
+                }
+            } catch (error) {
+                console.error('Error saving transaction:', error);
+            }
+        }
+        
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkUserRole().then(() => loadVendors());
+            
+            // Add click handlers for nav links
+            document.querySelectorAll('.nav-link[data-section]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const section = this.getAttribute('data-section');
+                    showSection(section);
+                });
+            });
+        });
+        
+        function showSection(section) {
+            currentSection = section;
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            document.querySelector('.nav-link[data-section="' + section + '"]').classList.add('active');
+            
+            document.getElementById('vendorsSection').style.display = 'none';
+            document.getElementById('purchaseOrdersSection').style.display = 'none';
+            document.getElementById('invoicesSection').style.display = 'none';
+            document.getElementById('contractsSection').style.display = 'none';
+            document.getElementById('performanceSection').style.display = 'none';
+            document.getElementById('transactionsSection').style.display = 'none';
+            document.getElementById('purchaseRequestsSection').style.display = 'none';
+            document.getElementById('reportsSection').style.display = 'none';
+            document.getElementById('notificationsSection').style.display = 'none';
+            
+            document.getElementById(section + 'Section').style.display = 'block';
+            
+            if (section === 'vendors') loadVendors();
+            else if (section === 'purchaseOrders') loadPurchaseOrders();
+            else if (section === 'invoices') loadInvoices();
+            else if (section === 'contracts') loadContracts();
+            else if (section === 'performance') loadPerformance();
+            else if (section === 'transactions') loadTransactions();
+            else if (section === 'purchaseRequests') loadPurchaseRequests();
+            else if (section === 'reports') loadReports();
+            else if (section === 'notifications') loadNotifications();
+        }
+        
+        function showAddVendorModal() {
+            new bootstrap.Modal(document.getElementById('addVendorModal')).show();
+        }
+        
+        async function loadVendors() {
+            try {
+                const response = await fetch('/api/vendors');
+                const vendors = await response.json();
+                
+                document.getElementById('totalVendors').textContent = vendors.length;
+                document.getElementById('activeVendors').textContent = vendors.filter(v => v.active).length;
+                
+                const tbody = document.getElementById('vendorsTableBody');
+                tbody.innerHTML = vendors.map(vendor => `
+                    <tr>
+                        <td>${vendor.id}</td>
+                        <td>${vendor.name}</td>
+                        <td>${vendor.email}</td>
+                        <td>${vendor.phone}</td>
+                        <td>${vendor.serviceType}</td>
+                        <td>$${vendor.payment}</td>
+                        <td>
+                            <span class="badge-pill ${vendor.active ? 'badge-success' : 'badge-danger'}">
+                                ${vendor.active ? 'Active' : 'Inactive'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteVendor(${vendor.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading vendors:', error);
+            }
+        }
+        
+        async function loadContracts() {
+            try {
+                const response = await fetch('/api/vendors');
+                const vendors = await response.json();
+                
+                let allContracts = [];
+                for (const vendor of vendors) {
+                    const res = await fetch(`/api/vendors/${vendor.id}/contracts`);
+                    const contracts = await res.json();
+                    contracts.forEach(c => c.vendorName = vendor.name);
+                    allContracts.push(...contracts);
+                }
+                
+                document.getElementById('totalContracts').textContent = allContracts.length;
+                
+                const tbody = document.getElementById('contractsTableBody');
+                tbody.innerHTML = allContracts.map(contract => `
+                    <tr>
+                        <td>${contract.id}</td>
+                        <td>${contract.title}</td>
+                        <td>${contract.vendorName}</td>
+                        <td>${contract.startDate}</td>
+                        <td>${contract.endDate}</td>
+                        <td>$${contract.value}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading contracts:', error);
+            }
+        }
+        
+        function showAddPoModal() {
+            populateVendorSelect('poVendorSelect');
+            new bootstrap.Modal(document.getElementById('addPoModal')).show();
+        }
+        
+        function showAddInvoiceModal() {
+            populateVendorSelect('invoiceVendorSelect');
+            new bootstrap.Modal(document.getElementById('addInvoiceModal')).show();
+        }
+        
+        async function loadPurchaseOrders() {
+            try {
+                const response = await fetch('/api/purchase-orders');
+                const orders = await response.json();
+                
+                const tbody = document.getElementById('purchaseOrdersTableBody');
+                tbody.innerHTML = orders.map(po => `
+                    <tr>
+                        <td>${po.id}</td>
+                        <td>${po.orderNumber}</td>
+                        <td>${po.vendor != null ? po.vendor.name : 'Unknown'}</td>
+                        <td>${po.orderDate}</td>
+                        <td>$${po.totalAmount}</td>
+                        <td><span class="badge-pill badge-info">${po.status}</span></td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading purchase orders:', error);
+            }
+        }
+        
+        async function loadInvoices() {
+            try {
+                const response = await fetch('/api/invoices');
+                const invoices = await response.json();
+                
+                const tbody = document.getElementById('invoicesTableBody');
+                tbody.innerHTML = invoices.map(inv => `
+                    <tr>
+                        <td>${inv.id}</td>
+                        <td>${inv.invoiceNumber}</td>
+                        <td>${inv.vendor != null ? inv.vendor.name : 'Unknown'}</td>
+                        <td>${inv.issueDate}</td>
+                        <td>${inv.dueDate}</td>
+                        <td>$${inv.amount}</td>
+                        <td><span class="badge-pill badge-warning">${inv.status}</span></td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading invoices:', error);
+            }
+        }
+        
+        async function savePurchaseOrder() {
+            const form = document.getElementById('addPoForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            data.totalAmount = parseFloat(data.totalAmount);
+            const vendorId = data.vendorId;
+            const createdById = data.createdById;
+            delete data.vendorId;
+            delete data.createdById;
+            
+            try {
+                const response = await fetch(`/api/purchase-orders?vendorId=${vendorId}&createdById=${createdById}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('addPoModal')).hide();
+                    form.reset();
+                    loadPurchaseOrders();
+                } else { alert('Failed to save PO'); }
+            } catch (error) { console.error('Error:', error); }
+        }
+        
+        async function saveInvoice() {
+            const form = document.getElementById('addInvoiceForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            data.amount = parseFloat(data.amount);
+            const vendorId = data.vendorId;
+            const purchaseOrderId = data.purchaseOrderId;
+            const createdById = data.createdById;
+            delete data.vendorId;
+            delete data.purchaseOrderId;
+            delete data.createdById;
+            
+            try {
+                const response = await fetch(`/api/invoices?vendorId=${vendorId}&purchaseOrderId=${purchaseOrderId}&createdById=${createdById}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('addInvoiceModal')).hide();
+                    form.reset();
+                    loadInvoices();
+                } else { alert('Failed to save Invoice'); }
+            } catch (error) { console.error('Error:', error); }
+        }
+        
+        async function loadPerformance() {
+            try {
+                const response = await fetch('/api/vendors');
+                const vendors = await response.json();
+                
+                let allRecords = [];
+                for (const vendor of vendors) {
+                    const res = await fetch(`/api/vendors/${vendor.id}/performance`);
+                    const records = await res.json();
+                    records.forEach(r => r.vendorName = vendor.name);
+                    allRecords.push(...records);
+                }
+                
+                const tbody = document.getElementById('performanceTableBody');
+                tbody.innerHTML = allRecords.map(record => `
+                    <tr>
+                        <td>${record.id}</td>
+                        <td>${record.vendorName}</td>
+                        <td>${record.reviewDate}</td>
+                        <td>${'★'.repeat(record.rating)}${'☆'.repeat(5-record.rating)}</td>
+                        <td>${record.comments || '-'}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading performance:', error);
+            }
+        }
+        
+        async function loadTransactions() {
+            try {
+                const response = await fetch('/api/vendors');
+                const vendors = await response.json();
+                
+                let allTransactions = [];
+                for (const vendor of vendors) {
+                    const res = await fetch(`/api/vendors/${vendor.id}/transactions`);
+                    const transactions = await res.json();
+                    transactions.forEach(t => t.vendorName = vendor.name);
+                    allTransactions.push(...transactions);
+                }
+                
+                document.getElementById('totalTransactions').textContent = allTransactions.length;
+                
+                const tbody = document.getElementById('transactionsTableBody');
+                tbody.innerHTML = allTransactions.map(transaction => `
+                    <tr>
+                        <td>${transaction.id}</td>
+                        <td>${transaction.vendorName}</td>
+                        <td>${transaction.transactionDate}</td>
+                        <td>$${transaction.amount}</td>
+                        <td>${transaction.type}</td>
+                        <td>
+                            <span class="badge-pill ${transaction.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}">
+                                ${transaction.status}
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+            }
+        }
+        
+        async function saveVendor() {
+            const form = document.getElementById('addVendorForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            data.payment = parseFloat(data.payment);
+            data.active = true;
+            
+            try {
+                const response = await fetch('/api/admin/vendors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('addVendorModal')).hide();
+                    form.reset();
+                    loadVendors();
+                } else {
+                    alert('Error saving vendor: ' + response.statusText);
+                }
+            } catch (error) {
+                console.error('Error saving vendor:', error);
+            }
+        }
+        
+        async function deleteVendor(id) {
+            if (confirm('Are you sure you want to delete this vendor?')) {
+                try {
+                    const response = await fetch(`/api/admin/vendors/${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        loadVendors();
+                    } else {
+                        alert('Error deleting vendor: ' + response.statusText);
+                    }
+                } catch (error) {
+                    console.error('Error deleting vendor:', error);
+                }
+            }
+        }
+        async function loadReports() {
+            try {
+                const poRes = await fetch('/api/purchase-orders/stats/count-by-status');
+                const poStats = await poRes.json();
+                document.getElementById('poStatsList').innerHTML = Object.keys(poStats).length ? Object.entries(poStats).map(([status, count]) => `<li class="list-group-item d-flex justify-content-between align-items-center">${status} <span class="badge bg-primary rounded-pill">${count}</span></li>`).join('') : '<li class="list-group-item text-muted">No data</li>';
+
+                const invRes = await fetch('/api/invoices/stats/count-by-status');
+                const invStats = await invRes.json();
+                document.getElementById('invoiceStatsList').innerHTML = Object.keys(invStats).length ? Object.entries(invStats).map(([status, count]) => `<li class="list-group-item d-flex justify-content-between align-items-center">${status} <span class="badge bg-primary rounded-pill">${count}</span></li>`).join('') : '<li class="list-group-item text-muted">No data</li>';
+            } catch (e) { console.error('Error loading reports:', e); }
+        }
+
+        async function loadNotifications() {
+            try {
+                // Hardcoding userId=1 for demo purposes
+                const res = await fetch('/api/notifications/user/1');
+                if (!res.ok) { document.getElementById('notificationsList').innerHTML = '<p class="text-muted p-3">Failed to load notifications.</p>'; return; }
+                const notifs = await res.json();
+                if (notifs.length === 0) {
+                    document.getElementById('notificationsList').innerHTML = '<p class="text-muted p-3">No notifications found.</p>';
+                    return;
+                }
+                document.getElementById('notificationsList').innerHTML = notifs.map(n => `
+                    <div class="list-group-item list-group-item-action ${!n.isRead ? 'list-group-item-info' : ''}">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">${n.title}</h5>
+                            <small>${new Date(n.createdAt).toLocaleDateString()}</small>
+                        </div>
+                        <p class="mb-1">${n.message}</p>
+                    </div>
+                `).join('');
+            } catch (e) { document.getElementById('notificationsList').innerHTML = '<p class="text-muted p-3">Error loading notifications.</p>'; console.error('Error loading notifs:', e); }
+        }
+
+        async function markAllNotificationsRead(userId) {
+            try {
+                await fetch('/api/notifications/user/' + userId + '/mark-all-read', { method: 'PUT' });
+                loadNotifications();
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadPurchaseRequests() {
+            try {
+                const response = await fetch('/api/purchase-requests');
+                let requests = await response.json();
+                requests = requests.filter(r => r.status === 'PENDING');
+                
+                const tbody = document.getElementById('purchaseRequestsTableBody');
+                tbody.innerHTML = requests.map(req => `
+                    <tr>
+                        <td>${req.id}</td>
+                        <td>${req.title}</td>
+                        <td>${req.createdBy ? req.createdBy.username : '-'}</td>
+                        <td>${req.suggestedVendor ? req.suggestedVendor.name : '-'}</td>
+                        <td>$${req.requestedAmount}</td>
+                        <td>
+                            <button class="btn btn-sm btn-success" onclick="approveAndGeneratePO(${req.id})">Approve & Gen PO</button>
+                            <button class="btn btn-sm btn-danger" onclick="rejectRequest(${req.id})">Reject</button>
+                        </td>
+                    </tr>
+                `).join('');
+                if(requests.length === 0) tbody.innerHTML = '<tr><td colspan="6" class="text-center p-3 text-muted">No pending requests</td></tr>';
+            } catch (error) { console.error('Error loading requests:', error); }
+        }
+
+        async function approveAndGeneratePO(id) {
+            try {
+                const approvalRes = await fetch('/api/purchase-requests/' + id + '/approve', { method: 'PUT' });
+                if(approvalRes.ok) {
+                    const reqObj = await approvalRes.json();
+                    
+                    let vendorId = reqObj.suggestedVendor ? reqObj.suggestedVendor.id : prompt("No suggested vendor. Enter Vendor ID to assign this PO:", "1");
+                    if(!vendorId) return;
+
+                    const poPayload = {
+                        orderNumber: "PO-GEN-" + Date.now(),
+                        description: reqObj.title + " - " + reqObj.description,
+                        totalAmount: reqObj.requestedAmount,
+                        expectedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                    };
+
+                    const poRes = await fetch('/api/purchase-orders?vendorId=' + vendorId + '&createdById=1', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(poPayload)
+                    });
+                    
+                    if(poRes.ok) {
+                        alert('Purchase Request Approved and Purchase Order Automatically Generated!');
+                        loadPurchaseRequests();
+                    } else alert('Error generating PO');
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function rejectRequest(id) {
+            if(!confirm("Are you sure you want to reject this request?")) return;
+            try {
+                const res = await fetch('/api/purchase-requests/' + id + '/reject', { method: 'PUT' });
+                if(res.ok) loadPurchaseRequests();
+            } catch(e) { console.error(e); }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/theme.js"></script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | VMS Premium</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/modern-dashboard.css">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <style>
+        .theme-toggle-floating {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .theme-toggle-floating:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+            color: white;
+        }
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            font-size: 2rem;
+            color: white;
+            transition: var(--transition);
+        }
+        .login-logo:hover {
+            transform: rotate(10deg) scale(1.1);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .btn-premium {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-weight: 600;
+            color: white;
+            transition: var(--transition);
+            width: 100%;
+        }
+        .btn-premium:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4);
+        }
+    </style>
+</head>
+<body class="login-page">
+    <a href="javascript:void(0)" id="themeToggle" class="theme-toggle-floating">
+        <i class="fas fa-moon"></i>
+    </a>
+    <div class="login-glass-card animate-fade-in">
+        <div class="text-center">
+            <div class="login-logo">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <h2 class="fw-bold text-white mb-1">Welcome Back</h2>
+            <p class="text-white-50 mb-4">Sign in to VMS Premium Portals</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="mb-4">
+                <label class="form-label text-white-50 small">Username</label>
+                <div class="input-group">
+                    <span class="input-group-text login-input border-end-0" style="border-radius: 12px 0 0 12px;">
+                        <i class="fas fa-user"></i>
+                    </span>
+                    <input type="text" class="form-control login-input border-start-0" name="username" placeholder="johndoe" required>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label text-white-50 small mb-0">Password</label>
+                    <a href="#" class="text-white-50 small text-decoration-none hover-white">Forgot?</a>
+                </div>
+                <div class="input-group">
+                    <span class="input-group-text login-input border-end-0" style="border-radius: 12px 0 0 12px;">
+                        <i class="fas fa-lock"></i>
+                    </span>
+                    <input type="password" class="form-control login-input border-start-0" name="password" placeholder="••••••••" required>
+                </div>
+            </div>
+
+            <div id="loginAlert" class="alert bg-danger text-white border-0 small mb-4 animate-fade-in d-none">
+                <i class="fas fa-exclamation-circle me-1"></i> <span id="alertMessage">Invalid credentials.</span>
+            </div>
+            
+            <button type="submit" class="btn-premium">
+                Sign In <i class="fas fa-arrow-right ms-2 small"></i>
+            </button>
+        </form>
+
+        <div class="mt-4 text-center">
+            <a href="vendor-registration.html" class="text-white small text-decoration-none opacity-75 hover-opacity-100">
+                Register as a New Vendor
+            </a>
+        </div>
+    </div>
+
+    <style>
+        .hover-white:hover { color: white !important; }
+        .hover-opacity-100:hover { opacity: 1 !important; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/theme.js"></script>
+    <script>
+        const API_BASE_URL = 'http://localhost:8080';
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const alert = document.getElementById('loginAlert');
+            const alertMsg = document.getElementById('alertMessage');
+            
+            alert.classList.add('d-none');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/login`, {
+                    method: 'POST',
+                    body: formData,
+                    // Note: We don't set Content-Type for FormData, browser does it with boundary
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Redirect based on backend response
+                    window.location.href = result.redirectUrl;
+                } else {
+                    alertMsg.textContent = result.message || 'Invalid credentials';
+                    alert.classList.remove('d-none');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alertMsg.textContent = 'Connection error. Is the backend running?';
+                alert.classList.remove('d-none');
+            }
+        });
+    </script>
+</body>
+</html>
+
