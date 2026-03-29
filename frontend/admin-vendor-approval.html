@@ -251,6 +251,8 @@
     <script src="js/theme.js"></script>
     <script>
         let currentTab = 'pending';
+        let currentUserId = null;
+        const vendorCache = new Map();
 
         async function handleLogout() {
             try { await fetch(`${API_BASE_URL}/logout`, { method: 'POST' }); } catch(e) {}
@@ -259,17 +261,32 @@
         
         // Load data on page load
         document.addEventListener('DOMContentLoaded', function() {
+            resolveCurrentUser();
             loadStats();
             loadVendors('pending');
             
             // Add event listeners for tab changes
-            document.querySelectorAll('.nav-link').forEach(tab => {
+            document.querySelectorAll('#vendorTabs .nav-link[data-bs-target]').forEach(tab => {
                 tab.addEventListener('click', function() {
-                    currentTab = this.getAttribute('data-bs-target').replace('#', '');
-                    loadVendors(currentTab);
+                    const tabTarget = this.getAttribute('data-bs-target');
+                    if (!tabTarget) return;
+                    currentTab = tabTarget.replace('#', '');
+                    if (currentTab) loadVendors(currentTab);
                 });
             });
         });
+
+        async function resolveCurrentUser() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/user`, { credentials: 'include' });
+                if (response.ok) {
+                    const user = await response.json();
+                    currentUserId = user.id;
+                }
+            } catch (error) {
+                console.error('Unable to resolve current user:', error);
+            }
+        }
 
         async function loadStats() {
             try {
@@ -325,6 +342,7 @@
                 }
                 
                 vendors.forEach(vendor => {
+                    vendorCache.set(vendor.id, vendor);
                     const vendorCard = createVendorCard(vendor, status);
                     container.appendChild(vendorCard);
                 });
@@ -397,30 +415,37 @@
 
         async function viewVendorDetails(vendorId) {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/vendors/${vendorId}`, { credentials: 'include' });
-                const vendor = await response.json();
+                const cachedVendor = vendorCache.get(vendorId);
+                let vendor = cachedVendor;
+
+                // Pending/rejected registrations may not exist in /api/vendors yet.
+                if (!vendor) {
+                    const response = await fetch(`${API_BASE_URL}/api/vendors/${vendorId}`, { credentials: 'include' });
+                    if (!response.ok) throw new Error('Vendor details unavailable');
+                    vendor = await response.json();
+                }
                 
                 // Populate modal
-                document.getElementById('modalVendorName').textContent = vendor.name;
-                document.getElementById('modalCompanyName').textContent = vendor.companyName;
-                document.getElementById('modalContactPerson').textContent = vendor.contactPerson;
-                document.getElementById('modalEmail').textContent = vendor.email;
-                document.getElementById('modalPhone').textContent = vendor.phone;
-                document.getElementById('modalServiceType').textContent = vendor.serviceType;
-                document.getElementById('modalCategory').textContent = vendor.category;
-                document.getElementById('modalRegistrationDate').textContent = vendor.registrationDate;
-                document.getElementById('modalGstNumber').textContent = vendor.gstNumber;
-                document.getElementById('modalPanNumber').textContent = vendor.panNumber;
+                document.getElementById('modalVendorName').textContent = vendor.name || '-';
+                document.getElementById('modalCompanyName').textContent = vendor.companyName || '-';
+                document.getElementById('modalContactPerson').textContent = vendor.contactPerson || '-';
+                document.getElementById('modalEmail').textContent = vendor.email || '-';
+                document.getElementById('modalPhone').textContent = vendor.phone || '-';
+                document.getElementById('modalServiceType').textContent = vendor.serviceType || '-';
+                document.getElementById('modalCategory').textContent = vendor.category || '-';
+                document.getElementById('modalRegistrationDate').textContent = vendor.registrationDate || '-';
+                document.getElementById('modalGstNumber').textContent = vendor.gstNumber || '-';
+                document.getElementById('modalPanNumber').textContent = vendor.panNumber || '-';
                 document.getElementById('modalWebsite').textContent = vendor.website || 'Not provided';
-                document.getElementById('modalDesignation').textContent = vendor.contactDesignation;
+                document.getElementById('modalDesignation').textContent = vendor.contactDesignation || '-';
                 document.getElementById('modalBankAccount').textContent = vendor.bankAccountNumber || 'Not provided';
                 document.getElementById('modalBankName').textContent = vendor.bankName || 'Not provided';
                 document.getElementById('modalIfscCode').textContent = vendor.ifscCode || 'Not provided';
-                document.getElementById('modalAddress').textContent = vendor.address;
-                document.getElementById('modalCity').textContent = vendor.city;
-                document.getElementById('modalState').textContent = vendor.state;
-                document.getElementById('modalCountry').textContent = vendor.country;
-                document.getElementById('modalPincode').textContent = vendor.pincode;
+                document.getElementById('modalAddress').textContent = vendor.address || '-';
+                document.getElementById('modalCity').textContent = vendor.city || '-';
+                document.getElementById('modalState').textContent = vendor.state || '-';
+                document.getElementById('modalCountry').textContent = vendor.country || '-';
+                document.getElementById('modalPincode').textContent = vendor.pincode || '-';
                 
                 // Documents list
                 const documentsList = document.getElementById('modalDocuments');
@@ -445,8 +470,8 @@
             }
             
             try {
-                // Hardcoding user ID 1 for now
-                const response = await fetch(`${API_BASE_URL}/api/vendor-registration/${vendorId}/approve?approvedByUserId=1`, {
+                const approverId = currentUserId || 1;
+                const response = await fetch(`${API_BASE_URL}/api/vendor-registration/${vendorId}/approve?approvedByUserId=${approverId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -454,14 +479,15 @@
                     credentials: 'include'
                 });
                 
-                const result = await response.json();
-                
-                if (result.success) {
+                let result = null;
+                try { result = await response.json(); } catch (e) {}
+
+                if (response.ok && (result == null || result.success !== false)) {
                     alert('Vendor approved successfully!');
                     loadVendors(currentTab);
                     loadStats();
                 } else {
-                    alert('Error approving vendor: ' + result.message);
+                    alert('Error approving vendor: ' + (result?.message || 'Request failed'));
                 }
                 
             } catch (error) {
@@ -487,7 +513,8 @@
             
             try {
                 // Pass reason as query param since controller uses @RequestParam
-                const response = await fetch(`${API_BASE_URL}/api/vendor-registration/${vendorId}/reject?rejectionReason=${encodeURIComponent(reason)}&rejectedByUserId=1`, {
+                const rejectorId = currentUserId || 1;
+                const response = await fetch(`${API_BASE_URL}/api/vendor-registration/${vendorId}/reject?rejectionReason=${encodeURIComponent(reason)}&rejectedByUserId=${rejectorId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -495,15 +522,16 @@
                     credentials: 'include'
                 });
                 
-                const result = await response.json();
-                
-                if (result.success) {
+                let result = null;
+                try { result = await response.json(); } catch (e) {}
+
+                if (response.ok && (result == null || result.success !== false)) {
                     alert('Vendor rejected successfully!');
                     bootstrap.Modal.getInstance(document.getElementById('rejectionModal')).hide();
                     loadVendors(currentTab);
                     loadStats();
                 } else {
-                    alert('Error rejecting vendor: ' + result.message);
+                    alert('Error rejecting vendor: ' + (result?.message || 'Request failed'));
                 }
                 
             } catch (error) {

@@ -23,12 +23,12 @@
         </div>
         <nav class="nav-menu">
             <div class="nav-item">
-                <a class="nav-link active" onclick="showSection('orders')" id="nav-orders">
+                <a class="nav-link active" href="javascript:void(0)" onclick="showSection('orders')" id="nav-orders">
                     <i class="fas fa-box-archive"></i> Purchase Orders
                 </a>
             </div>
             <div class="nav-item">
-                <a class="nav-link" onclick="showSection('invoices')" id="nav-invoices">
+                <a class="nav-link" href="javascript:void(0)" onclick="showSection('invoices')" id="nav-invoices">
                     <i class="fas fa-file-invoice-dollar"></i> Invoices
                 </a>
             </div>
@@ -155,6 +155,9 @@
     <script>
         let currentUserId = null;
         let vendorId = null;
+        function showPageError(message) {
+            alert(message);
+        }
 
         async function handleLogout() {
             try {
@@ -193,12 +196,17 @@
         }
 
         function showSection(sec) {
+            const sectionMap = {
+                orders: { sectionId: 'ordersSection', navId: 'nav-orders' },
+                invoices: { sectionId: 'invoicesSection', navId: 'nav-invoices' }
+            };
+            if (!sectionMap[sec]) return;
             document.getElementById('ordersSection').style.display = 'none';
             document.getElementById('invoicesSection').style.display = 'none';
             document.getElementById('nav-orders').classList.remove('active');
             document.getElementById('nav-invoices').classList.remove('active');
-            document.getElementById(sec + 'Section').style.display = 'block';
-            document.getElementById('nav-' + sec).classList.add('active');
+            document.getElementById(sectionMap[sec].sectionId).style.display = 'block';
+            document.getElementById(sectionMap[sec].navId).classList.add('active');
             if(sec === 'orders') loadPOs();
             if(sec === 'invoices') loadInvoices();
         }
@@ -220,14 +228,17 @@
                         <td>$${p.totalAmount}</td>
                         <td><span class="badge-pill badge-info">${p.status}</span></td>
                         <td>
-                            ${p.status === 'PENDING' ? `
-                                <button class="btn btn-sm btn-success" onclick="updatePO(${p.id}, 'PROCESSING')">Accept</button>
+                            ${p.status === 'PENDING_APPROVAL' ? `
+                                <button class="btn btn-sm btn-success" onclick="updatePO(${p.id}, 'IN_PROGRESS')">Accept</button>
                                 <button class="btn btn-sm btn-danger" onclick="updatePO(${p.id}, 'CANCELLED')">Reject</button>
-                            ` : `<button class="btn btn-sm btn-primary" onclick="updatePO(${p.id}, 'DELIVERED')">Mark Delivered</button>`}
+                            ` : (p.status === 'IN_PROGRESS' ? `<button class="btn btn-sm btn-primary" onclick="updatePO(${p.id}, 'DELIVERED')">Mark Delivered</button>` : `<span class="text-muted small">No actions</span>`)}
                         </td>
                     </tr>
                 `).join('');
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error(e);
+                showPageError('Unable to load purchase orders right now.');
+            }
         }
 
         async function updatePO(id, status) {
@@ -238,7 +249,10 @@
                 });
                 if(res.ok) loadPOs();
                 else alert('Failed to update status');
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error(e);
+                showPageError('Unable to update purchase order status.');
+            }
         }
 
         async function loadInvoices() {
@@ -256,12 +270,15 @@
                     <tr>
                         <td>${i.invoiceNumber}</td>
                         <td>PO-${i.purchaseOrder ? i.purchaseOrder.id : '-'}</td>
-                        <td>${i.invoiceDate}</td>
+                        <td>${i.invoiceDate || i.issueDate || '-'}</td>
                         <td>$${i.amount}</td>
                         <td><span class="badge-pill badge-success">${i.status}</span></td>
                     </tr>
                 `).join('');
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error(e);
+                showPageError('Unable to load invoices right now.');
+            }
         }
 
         function showInvoiceModal() {
@@ -285,7 +302,10 @@
                     form.reset();
                     loadInvoices();
                 } else alert('Error submitting invoice');
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error(e);
+                showPageError('Unable to submit invoice right now.');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', init);

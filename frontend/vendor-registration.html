@@ -208,7 +208,7 @@
                                     <label>Industry Category</label>
                                     <select class="form-select reg-input" name="category" required>
                                         <option value="" class="bg-dark">Select Industry</option>
-                                        <option value="IT" class="bg-dark">IT Services</option>
+                                        <option value="IT_SERVICES" class="bg-dark">IT Services</option>
                                         <option value="LOGISTICS" class="bg-dark">Logistics</option>
                                         <option value="MATERIALS" class="bg-dark">Materials</option>
                                         <option value="CONSULTING" class="bg-dark">Consulting</option>
@@ -380,7 +380,7 @@
 
         document.getElementById('vendorRegistrationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if(!document.getElementById('termsCheck').checked) return alert('Please certifiy the information');
+            if(!document.getElementById('termsCheck').checked) return alert('Please certify the information');
             
             const formData = new FormData(e.target);
             try {
@@ -401,4 +401,4 @@
         });
     </script>
 </body>
-</html>
+</html>

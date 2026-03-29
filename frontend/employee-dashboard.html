@@ -23,7 +23,7 @@
         </div>
         <nav class="nav-menu">
             <div class="nav-item">
-                <a class="nav-link active" href="#" data-section="requests">
+                <a class="nav-link active" href="javascript:void(0)" data-section="requests">
                     <i class="fas fa-file-invoice"></i> My Requests
                 </a>
             </div>
@@ -125,6 +125,9 @@
     <script src="js/theme.js"></script>
     <script>
         let currentUserId = null;
+        function showPageError(message) {
+            alert(message);
+        }
 
         async function handleLogout() {
             try {
@@ -161,7 +164,10 @@
                         select.innerHTML += `<option value="${v.id}">${v.name}</option>`;
                     }
                 });
-            } catch (error) { console.error('Error loading vendors:', error); }
+            } catch (error) {
+                console.error('Error loading vendors:', error);
+                showPageError('Unable to load vendors right now.');
+            }
         }
 
         async function loadRequests() {
@@ -187,7 +193,10 @@
                         </td>
                     </tr>
                 `).join('');
-            } catch (error) { console.error('Error loading requests:', error); }
+            } catch (error) {
+                console.error('Error loading requests:', error);
+                showPageError('Unable to load your requests right now.');
+            }
         }
 
         function showAddRequestModal() {
@@ -220,7 +229,10 @@
                 } else {
                     alert('Error submitting request');
                 }
-            } catch (error) { console.error('Error:', error); }
+            } catch (error) {
+                console.error('Error:', error);
+                showPageError('Unable to submit request right now.');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', init);
