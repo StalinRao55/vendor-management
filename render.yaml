@@ -2,17 +2,18 @@ services:
   - type: web
     name: vendor-management
     runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /login.html
     region: oregon
     plan: free
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: "prod"
-      - key: SERVER_PORT
-        value: "10000"
       - key: DB_HOST
         fromDatabase:
           name: vendor-management-db
-          property: connectionString
+          property: host
       - key: DB_PORT
         fromDatabase:
           name: vendor-management-db
@@ -21,10 +22,10 @@ services:
         fromDatabase:
           name: vendor-management-db
           property: database
-      - key: DB_USERNAME
+      - key: DB_USER
         fromDatabase:
           name: vendor-management-db
-          property: username
+          property: user
       - key: DB_PASSWORD
         fromDatabase:
           name: vendor-management-db
